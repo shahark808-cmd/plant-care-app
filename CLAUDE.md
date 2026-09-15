@@ -53,7 +53,8 @@ npm run lint       # oxlint
 
 ### שלב 1 — שלד הפרויקט, PWA, פריסה ל-Vercel (2026-09-15)
 נבנה: Vite+React+TS+Tailwind v4, RTL בסיסי, ניווט תחתון (BottomNav) עם 4 מסכי placeholder (היום/צמחים/היסטוריה/הגדרות) + מסכי login/onboarding נוספים, PWA מלא דרך `vite-plugin-pwa` (manifest, service worker, אייקונים זמניים שנוצרו ב-`scripts/generate-icons.ps1`), באנר "הוסף למסך הבית" ל-iOS Safari. `npm run build` עובר נקי.
-Git הותקן במהלך השלב הזה (לא היה על המחשב).
+Git הותקן במהלך השלב הזה (לא היה על המחשב). GitHub repo: `shahark808-cmd/plant-care-app`. פרויקט Vercel: `pp-e5ee/plant-care-app1`.
+**כתובת הפרודקשן: https://plant-care-app1.vercel.app** — תשמש כ-redirect URL כשנגדיר Supabase Auth בשלב 2.
 
 ## סיכונים וקומפרומיסים מקובלים
 
