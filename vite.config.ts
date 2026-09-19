@@ -13,16 +13,16 @@ export default defineConfig({
       includeAssets: ['favicon.svg', 'icons/apple-touch-icon.png'],
       manifest: {
         id: '/',
-        name: 'טיפוח הצמחים',
-        short_name: 'הצמחים שלנו',
-        description: 'ניהול משותף של השקיית צמחי הבית',
+        name: 'העוזר האישי של שחר - טיול קוריאה',
+        short_name: 'קוריאה',
+        description: 'תוכנית יומית, המלצות, ניווט ותרגום לטיול בקוריאה',
         lang: 'he',
         dir: 'rtl',
         start_url: '/',
         scope: '/',
         display: 'standalone',
-        background_color: '#0f172a',
-        theme_color: '#16a34a',
+        background_color: '#FAF7F2',
+        theme_color: '#0F6B5C',
         icons: [
           {
             src: '/icons/icon-192.png',
