@@ -12,6 +12,10 @@ dist
 dist-ssr
 *.local
 
+# PWA icons are generated deterministically by scripts/generate-icons.mjs
+# (npm predev/prebuild hooks run it automatically) - not committed as binaries.
+public/icons/*.png
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
