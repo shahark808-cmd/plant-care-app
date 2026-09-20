@@ -1,16 +1,18 @@
 {
-  "name": "plant-care-app",
+  "name": "korea-trip-app",
   "private": true,
   "version": "0.0.0",
   "type": "module",
   "scripts": {
+    "predev": "node scripts/generate-icons.mjs",
     "dev": "vite",
+    "prebuild": "node scripts/generate-icons.mjs",
     "build": "tsc -b && vite build",
     "lint": "oxlint",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "generate-icons": "node scripts/generate-icons.mjs"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.116.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "react-router-dom": "^7.18.4"

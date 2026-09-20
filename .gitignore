@@ -12,13 +12,9 @@ dist
 dist-ssr
 *.local
 
-# env vars (never commit secrets)
-.env
-.env.*
-!.env.example
-
-# supabase local dev
-supabase/.temp
+# PWA icons are generated deterministically by scripts/generate-icons.mjs
+# (npm predev/prebuild hooks run it automatically) - not committed as binaries.
+public/icons/*.png
 
 # Editor directories and files
 .vscode/*

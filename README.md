@@ -1,3 +1,9 @@
+# העוזר האישי של שחר — Korea Trip PWA
+
+עוזר טיול לקוריאה: תוכנית יומית, מדריך רבעים בסיאול, המלצות מקומות, ניווט (Naver/Kakao) ותרגום עברית-קוריאנית. ראו `CLAUDE.md` לפרטי הארכיטקטורה והמוסכמות.
+
+---
+
 # React + TypeScript + Vite
 
 This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
