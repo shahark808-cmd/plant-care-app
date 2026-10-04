@@ -18,6 +18,8 @@ HERE = pathlib.Path(__file__).parent
 MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
 KEY = os.getenv("GEMINI_API_KEY")
 SEEN = HERE / "seen.json"
+JOB_SITES = ("alljobs.co.il", "drushim.co.il", "jobmaster.co.il")
+COMPETITORS = ("Genesys", "NICE", "Verint", "Avaya", "Cisco Webex Contact Center")
 UA = {"User-Agent": "Mozilla/5.0"}
 
 
@@ -67,7 +69,9 @@ def discover(icp, sector, seen):
     ctx = "\n".join(search(q) for q in (
         f"חברות גדולות בישראל ענף {sector} מוקד שירות לקוחות",
         f"הגדולות ב{sector} בישראל מספר עובדים",
-        f"דרושים נציג שירות לקוחות {sector} חברה"))
+        f"דרושים נציג שירות לקוחות {sector} חברה",
+        *(f"{d} {sector}" for d in ("site:alljobs.co.il נציג שירות", "site:drushim.co.il נציג שירות")),
+        *(f"לקוחות {c} ישראל {sector}" for c in COMPETITORS)))
     prompt = f"""אתה חוקר מכירות B2B של תדיראן טלקום ({icp['product']}).
 מתוצאות החיפוש הבאות, חלץ עד {icp['per_sector_candidates']} חברות ישראליות בענף "{sector}"
 שסביר שיש להן {icp['employees_min']}-{icp['employees_max']} עובדים ומוקד שירות/מכירות. רק חברות שמופיעות בתוצאות.
@@ -84,8 +88,10 @@ def research(icp, company, sector):
     n = company["name"]
     site = fetch(company["website"]) if company.get("website", "").startswith("http") else ""
     ctx = "\n".join(search(q, 5) for q in (
-        f"{n} מספר עובדים", f"{n} דרושים נציג שירות מוקד", f"{n} שירות לקוחות וואטסאפ צ'אט",
-        f"{n} מכרז מוקד OR ענן OR גיוס OR מנהל חדש"))
+        f"{n} מספר עובדים", f"{n} שירות לקוחות וואטסאפ צ'אט",
+        f"{n} מכרז מוקד OR ענן OR גיוס OR מנהל חדש",
+        f"{n} דוח שנתי מספר עובדים site:maya.tase.co.il OR site:tase.co.il",
+        *(f"{n} נציג שירות מוקד site:{d}" for d in JOB_SITES)))
     prompt = f"""נתח את החברה "{n}" (ענף {sector}, ישראל) כלקוחה פוטנציאלית של תדיראן טלקום ({icp['product']}).
 השתמש אך ורק במידע שלהלן. אל תמציא; אם אין מידע כתוב "לא ידוע" או null. אל תנחש מיילים/טלפונים.
 סיגנלים לחיפוש: {'; '.join(icp['signals'])}.
