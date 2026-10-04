@@ -1,0 +1,4 @@
+.env
+seen.json
+leads_*.xlsx
+__pycache__/
