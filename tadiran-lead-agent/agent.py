@@ -1,61 +1,105 @@
-"""סוכן איתור לקוחות לתדיראן טלקום — מחקר ודירוג בלבד, בלי שליחת הודעות.
+"""סוכן איתור לקוחות לתדיראן טלקום — חינמי לגמרי (DuckDuckGo + Gemini free tier).
+מחקר ודירוג בלבד, בלי שליחת הודעות.
 
 שימוש: python agent.py [--sector "ביטוח ופנסיה"] [--limit 5]
 """
-import argparse, json, re, datetime, pathlib, sys
-import yaml
-from anthropic import Anthropic
+import argparse, json, re, datetime, pathlib, sys, time, os
+import requests, yaml
 from dotenv import load_dotenv
 from openpyxl import Workbook
 from openpyxl.styles import Font, Alignment
+try:
+    from ddgs import DDGS
+except ImportError:  # השם הישן של החבילה
+    from duckduckgo_search import DDGS
 
 load_dotenv()
 HERE = pathlib.Path(__file__).parent
-MODEL = "claude-sonnet-5-5"
+MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
+KEY = os.getenv("GEMINI_API_KEY")
 SEEN = HERE / "seen.json"
-client = Anthropic()
-TOOLS = [{"type": "web_search_20250305", "name": "web_search", "max_uses": 8}]
+UA = {"User-Agent": "Mozilla/5.0"}
 
 
-def ask_json(prompt: str):
-    """קריאה ל-Claude עם חיפוש ווב; מחזירה JSON שנשלף מהתשובה."""
-    messages = [{"role": "user", "content": prompt}]
-    for _ in range(6):  # pause_turn = הכלי עדיין רץ, ממשיכים
-        resp = client.messages.create(model=MODEL, max_tokens=4096, tools=TOOLS, messages=messages)
-        if resp.stop_reason != "pause_turn":
-            break
-        messages += [{"role": "assistant", "content": resp.content}]
-    text = "".join(b.text for b in resp.content if b.type == "text")
-    m = re.search(r"(\[.*\]|\{.*\})", text, re.S)
-    if not m:
-        return None
+def search(query, n=6):
+    """חיפוש DuckDuckGo חינמי, בלי מפתח. מחזיר טקסט מקוצר עם URL לכל תוצאה."""
+    for attempt in range(3):
+        try:
+            res = DDGS().text(query, region="il-he", max_results=n)
+            return "\n".join(f"[{r['href']}] {r['title']}: {r['body']}" for r in res)
+        except Exception:
+            time.sleep(2 * (attempt + 1))
+    return ""
+
+
+def fetch(url, limit=3000):
     try:
-        return json.loads(m.group(1))
-    except json.JSONDecodeError:
-        return None
+        html = requests.get(url, headers=UA, timeout=10).text
+    except Exception:
+        return ""
+    html = re.sub(r"(?s)<(script|style).*?</\1>", " ", html)
+    return re.sub(r"\s+", " ", re.sub(r"<[^>]+>", " ", html))[:limit]
+
+
+def ask_json(prompt):
+    """קריאה ל-Gemini (שכבה חינמית) שמחזירה JSON. מנסה שוב כשחורגים ממגבלת הקצב."""
+    if not KEY:
+        sys.exit("חסר GEMINI_API_KEY ב-.env (מפתח חינמי: aistudio.google.com/apikey)")
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/{MODEL}:generateContent"
+    body = {"contents": [{"parts": [{"text": prompt}]}],
+            "generationConfig": {"responseMimeType": "application/json", "temperature": 0.2}}
+    for attempt in range(5):
+        r = requests.post(url, params={"key": KEY}, json=body, timeout=90)
+        if r.status_code == 429 or r.status_code >= 500:
+            time.sleep(15 * (attempt + 1))
+            continue
+        if r.status_code != 200:
+            print(f"שגיאת Gemini {r.status_code}", file=sys.stderr)
+            return None
+        try:
+            return json.loads(r.json()["candidates"][0]["content"]["parts"][0]["text"])
+        except (KeyError, IndexError, json.JSONDecodeError):
+            return None
+    return None
 
 
 def discover(icp, sector, seen):
+    ctx = "\n".join(search(q) for q in (
+        f"חברות גדולות בישראל ענף {sector} מוקד שירות לקוחות",
+        f"הגדולות ב{sector} בישראל מספר עובדים",
+        f"דרושים נציג שירות לקוחות {sector} חברה"))
     prompt = f"""אתה חוקר מכירות B2B של תדיראן טלקום ({icp['product']}).
-חפש ברשת {icp['per_sector_candidates']} חברות בישראל בענף "{sector}" עם {icp['employees_min']}-{icp['employees_max']} עובדים
-שמפעילות מוקד שירות או מכירות משמעותי. השתמש רק במקורות ציבוריים.
+מתוצאות החיפוש הבאות, חלץ עד {icp['per_sector_candidates']} חברות ישראליות בענף "{sector}"
+שסביר שיש להן {icp['employees_min']}-{icp['employees_max']} עובדים ומוקד שירות/מכירות. רק חברות שמופיעות בתוצאות.
 דלג על: {', '.join(sorted(seen)) or 'אין'}.
-החזר JSON בלבד: רשימה של {{"name": "...", "website": "..."}}."""
-    return ask_json(prompt) or []
+החזר JSON: רשימה של {{"name": "...", "website": "..."}} (website ריק אם לא מופיע).
+
+תוצאות:
+{ctx}"""
+    r = ask_json(prompt)
+    return r if isinstance(r, list) else []
 
 
 def research(icp, company, sector):
-    prompt = f"""חקור את החברה "{company['name']}" ({company.get('website','')}), ענף {sector}, בישראל,
-כלקוחה פוטנציאלית של תדיראן טלקום ({icp['product']}). מקורות ציבוריים בלבד.
-בדוק: מספר עובדים (הערכה, ציין מקור), גודל מוקד, משרות פתוחות לנציגים/מוקד, ערוצי שירות באתר
-(WhatsApp/צ'אט/מייל/טלפון), ספק מוקד נוכחי אם פורסם, וסיגנלים: {'; '.join(icp['signals'])}.
-אל תמציא נתונים — אם לא נמצא כתוב "לא ידוע". אל תנחש כתובות מייל או טלפונים.
-ציון 0-100 = התאמה ל-Omnichannel + ענן (גודל מוקד, פיצול ערוצים, כאב, תזמון).
-החזר JSON בלבד עם המפתחות:
-name, sector, employees_estimate (מספר או null), employees_source, contact_center_notes,
-channels_today, pain_signals (רשימה), contact_role (תפקיד רלוונטי ושם אם פורסם ציבורית, אחרת null),
-score (מספר), rationale (משפט או שניים בעברית), sources (רשימת URL)."""
-    return ask_json(prompt)
+    n = company["name"]
+    site = fetch(company["website"]) if company.get("website", "").startswith("http") else ""
+    ctx = "\n".join(search(q, 5) for q in (
+        f"{n} מספר עובדים", f"{n} דרושים נציג שירות מוקד", f"{n} שירות לקוחות וואטסאפ צ'אט",
+        f"{n} מכרז מוקד OR ענן OR גיוס OR מנהל חדש"))
+    prompt = f"""נתח את החברה "{n}" (ענף {sector}, ישראל) כלקוחה פוטנציאלית של תדיראן טלקום ({icp['product']}).
+השתמש אך ורק במידע שלהלן. אל תמציא; אם אין מידע כתוב "לא ידוע" או null. אל תנחש מיילים/טלפונים.
+סיגנלים לחיפוש: {'; '.join(icp['signals'])}.
+ציון 0-100 = התאמה (גודל מוקד, פיצול ערוצים, כאב, תזמון). בלי עדות לגודל המוקד, ציון נמוך מ-50.
+החזר JSON עם המפתחות: name, sector, employees_estimate (מספר או null), employees_source,
+contact_center_notes, channels_today, pain_signals (רשימת מחרוזות), contact_role (תפקיד/שם שפורסם ציבורית או null),
+score (מספר), rationale (1-2 משפטים בעברית), sources (רשימת URL מתוך התוצאות בלבד).
+
+תוכן האתר: {site}
+
+תוצאות חיפוש:
+{ctx}"""
+    r = ask_json(prompt)
+    return r if isinstance(r, dict) else None
 
 
 def in_range(lead, icp):

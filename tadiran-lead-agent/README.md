@@ -5,10 +5,14 @@
 
 ```bash
 pip install -r requirements.txt
-cp .env.example .env        # להדביק ANTHROPIC_API_KEY
+cp .env.example .env        # להדביק GEMINI_API_KEY (חינמי: aistudio.google.com/apikey)
 python agent.py --sector "ביטוח ופנסיה" --limit 5   # ריצת ניסוי
 python agent.py                                     # כל הענפים
 ```
 הפלט: `leads_YYYY-MM-DD.xlsx` ממוין לפי ציון. `icp.yaml` מגדיר ענפים, טווח גודל וסיגנלים.
 `seen.json` מונע כפילויות בין ריצות (למחוק כדי להתחיל מחדש).
 כל נתון שהסוכן מצטט נבדק ידנית לפני פנייה; מספר עובדים הוא הערכה.
+
+## עלות: אפס
+חיפוש: DuckDuckGo (בלי מפתח). ניתוח: Gemini בשכבה החינמית (מגבלת קצב, הסוכן ממתין ומנסה שוב; ריצה על כל הענפים יכולה לקחת זמן).
+האיכות נמוכה מעט מחיפוש בתשלום: DuckDuckGo נותן תוצאות מועטות ולפעמים נחסם זמנית.
