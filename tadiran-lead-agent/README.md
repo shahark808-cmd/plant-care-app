@@ -24,3 +24,5 @@ python agent.py                                     # כל הענפים
 - מייל: `GMAIL_USER`, `GMAIL_APP_PASSWORD` (App Password, דורש אימות דו-שלבי), `NOTIFY_TO`. התראה כוללת את הלידים החדשים וציון 80+ כחמים.
 - הרצה מתוזמנת: `.github/workflows/leads.yml` (שבועי). לשים את הסודות ב-GitHub Secrets.
 - דשבורד: ראו `docs/DASHBOARD.md`.
+
+שם השולח במייל נקבע ב-`MAIL_FROM_NAME` (ברירת מחדל: מוטי).

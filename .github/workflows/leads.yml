@@ -21,6 +21,7 @@ jobs:
           GMAIL_USER: ${{ secrets.GMAIL_USER }}
           GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
           NOTIFY_TO: ${{ secrets.NOTIFY_TO }}
+          MAIL_FROM_NAME: ${{ vars.MAIL_FROM_NAME }}
           SECTOR: ${{ inputs.sector }}
         run: |
           if [ -n "$SECTOR" ]; then python agent.py --sector "$SECTOR"; else python agent.py; fi

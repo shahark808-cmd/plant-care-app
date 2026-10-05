@@ -2,6 +2,7 @@
 import html, os, smtplib
 import persona
 from email.message import EmailMessage
+from email.utils import formataddr
 
 
 def configured():
@@ -30,7 +31,8 @@ def send(leads, hot_min=80):
         return False
     subject, body = build(leads, hot_min)
     msg = EmailMessage()
-    msg["Subject"], msg["From"], msg["To"] = subject, os.environ["GMAIL_USER"], os.environ["NOTIFY_TO"]
+    msg["Subject"], msg["To"] = subject, os.environ["NOTIFY_TO"]
+    msg["From"] = formataddr((os.getenv("MAIL_FROM_NAME") or persona.NAME, os.environ["GMAIL_USER"]))
     msg.set_content("הודעה זו מכילה טבלת HTML.")
     msg.add_alternative(body, subtype="html")
     with smtplib.SMTP_SSL("smtp.gmail.com", 465) as s:
