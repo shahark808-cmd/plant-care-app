@@ -1,5 +1,6 @@
 """מיילים דרך SMTP של Gmail (חינמי; App Password). אם לא הוגדר, מדלגים."""
 import html, os, smtplib
+import persona
 from email.message import EmailMessage
 
 
@@ -14,14 +15,13 @@ def _row(l):
             f"<td>{html.escape(str(l.get('rationale','')))}</td><td>{src}</td></tr>")
 
 
-def build(leads, hot_min, subject_prefix="עדכון לידים"):
+def build(leads, hot_min, subject_prefix="מוטי: עדכון לידים"):
     hot = [l for l in leads if (l.get("score") or 0) >= hot_min]
     rows = "".join(_row(l) for l in sorted(leads, key=lambda x: -(x.get("score") or 0)))
-    body = (f'<div dir="rtl" style="font-family:Arial"><h2>{subject_prefix}: {len(leads)} לידים חדשים, '
-            f'{len(hot)} חמים (ציון {hot_min}+)</h2>'
+    body = (f'<div dir="rtl" style="font-family:Arial"><h2>{html.escape(persona.greeting(len(hot), len(leads)))}</h2>'
             '<table border="1" cellpadding="6" style="border-collapse:collapse"><tr><th>חברה</th><th>ציון</th>'
             f'<th>עובדים</th><th>נימוק</th><th>מקורות</th></tr>{rows}</table>'
-            '<p>גודל וניתוח הם הערכה ממקורות ציבוריים. יש לאמת לפני פנייה. פסילת ליד נעשית בדשבורד.</p></div>')
+            '<p>הגודל והניתוח הם הערכה ממקורות ציבוריים, אז תבדוק לפני שמרימים טלפון. לפסול ליד אפשר בדשבורד. - מוטי</p></div>')
     return f"{subject_prefix}: {len(leads)} חדשים ({len(hot)} חמים)", body
 
 

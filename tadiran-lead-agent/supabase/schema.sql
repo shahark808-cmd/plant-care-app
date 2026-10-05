@@ -28,10 +28,10 @@ create trigger leads_touch before update on public.leads
 alter table public.leads enable row level security;
 
 -- רק משתמש מחובר (אבא, דרך Supabase Auth) קורא; הסוכן משתמש ב-service_role שעוקף RLS
-drop policy if exists "auth read" on public.leads;
-create policy "auth read" on public.leads for select to authenticated using (true);
-drop policy if exists "auth update" on public.leads;
-create policy "auth update" on public.leads for update to authenticated using (true) with check (true);
+drop policy if exists auth_read on public.leads;
+create policy auth_read on public.leads for select to authenticated using (true);
+drop policy if exists auth_update on public.leads;
+create policy auth_update on public.leads for update to authenticated using (true) with check (true);
 
 -- משתמש מחובר יכול לשנות רק status ו-reject_reason
 revoke all on public.leads from anon, authenticated;

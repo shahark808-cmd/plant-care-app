@@ -1,4 +1,4 @@
-"""סוכן איתור לקוחות לתדיראן טלקום — חינמי. מחקר ודירוג בלבד, בלי פנייה ללקוחות.
+"""מוטי — סוכן איתור לקוחות לתדיראן טלקום, חינמי. מחקר ודירוג בלבד, בלי פנייה ללקוחות.
 
 שימוש: python agent.py [--sector "ביטוח ופנסיה"] [--limit 5] [--no-email]
 עם SUPABASE_URL/SUPABASE_SERVICE_KEY כותב ל-Supabase; בלעדיהם כותב קובץ Excel מקומי.
@@ -8,7 +8,7 @@ import yaml
 from openpyxl import Workbook
 from openpyxl.styles import Alignment, Font
 
-import notify, score, store, verify
+import notify, persona, score, store, verify
 from sources import jobs, maya, tenders
 
 HERE = pathlib.Path(__file__).parent
@@ -47,7 +47,7 @@ def run(icp, sectors, send_email=True):
         reasons = []
     leads = []
     for sector in sectors:
-        print(f"== {sector}", file=sys.stderr)
+        print(f"{persona.NAME}: יוצא לחפש בענף {sector}...", file=sys.stderr)
         ctx = "\n".join((jobs.discover_text(sector), tenders.discover_text(sector), maya.discover_text(sector)))
         for cand in score.discover_candidates(icp, sector, ctx, seen):
             name = (cand.get("name") or "").strip()
