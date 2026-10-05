@@ -26,3 +26,5 @@ python agent.py                                     # כל הענפים
 - דשבורד: ראו `docs/DASHBOARD.md`.
 
 שם השולח במייל נקבע ב-`MAIL_FROM_NAME` (ברירת מחדל: מוטי).
+
+מילוי .env בשאלות: `python setup_env.py`
