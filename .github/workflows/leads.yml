@@ -1,0 +1,26 @@
+name: leads-agent
+on:
+  schedule: [{cron: "0 5 * * 0"}]   # ימי ראשון 05:00 UTC
+  workflow_dispatch:
+    inputs:
+      sector: {description: "ענף בודד (ריק = כל הענפים)", required: false}
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.11"}
+      - run: pip install -r tadiran-lead-agent/requirements.txt
+      - working-directory: tadiran-lead-agent
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          GMAIL_USER: ${{ secrets.GMAIL_USER }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+          NOTIFY_TO: ${{ secrets.NOTIFY_TO }}
+          SECTOR: ${{ inputs.sector }}
+        run: |
+          if [ -n "$SECTOR" ]; then python agent.py --sector "$SECTOR"; else python agent.py; fi

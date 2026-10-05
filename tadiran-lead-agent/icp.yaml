@@ -5,6 +5,7 @@ employees_min: 200
 employees_max: 2000
 per_sector_candidates: 8     # כמה חברות לחפש בכל ענף
 min_score: 40                # מתחת לזה לא נכנס לקובץ
+hot_score: 80                # ציון להתראת מייל מיידית
 sectors:
   - ביטוח ופנסיה
   - בנקאות ופינטק
