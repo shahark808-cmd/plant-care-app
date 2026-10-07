@@ -61,6 +61,7 @@ export default function WorkoutEditRoute() {
 
   return (
     <main className="page">
+      <h1 className="sr-only">עריכת אימון</h1>
       <div className="row">
         <button className="icon-btn" aria-label="חזרה" onClick={() => nav('/workouts')}><ChevronRight size={22} /></button>
         <input className="field" aria-label="שם האימון" value={tpl.name} onChange={(e) => save({ name: e.target.value })} />

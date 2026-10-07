@@ -4,6 +4,8 @@ import { BrowserRouter } from 'react-router-dom'
 import { registerSW } from 'virtual:pwa-register'
 import App from './App'
 import { seedIfEmpty } from './lib/db'
+import '@fontsource/heebo/400.css'
+import '@fontsource/heebo/500.css'
 import './index.css'
 
 if (!import.meta.env.DEV) registerSW({ immediate: true })

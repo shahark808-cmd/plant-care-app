@@ -15,10 +15,10 @@ import type { Run, RunFeel } from '../types'
 
 export function RunningTabs({ active }: { active: 'runs' | 'plan' }) {
   return (
-    <div className="seg" role="tablist">
-      <Link to="/running" className={active === 'runs' ? 'on' : ''}>הריצות שלי</Link>
-      <Link to="/running/plan" className={active === 'plan' ? 'on' : ''}>תוכנית 10 ק״מ</Link>
-    </div>
+    <nav className="seg" aria-label="חלוקה למסכים">
+      <Link to="/running" className={active === 'runs' ? 'on' : ''} aria-current={active === 'runs' ? 'page' : undefined}>הריצות שלי</Link>
+      <Link to="/running/plan" className={active === 'plan' ? 'on' : ''} aria-current={active === 'plan' ? 'page' : undefined}>תוכנית 10 ק״מ</Link>
+    </nav>
   )
 }
 

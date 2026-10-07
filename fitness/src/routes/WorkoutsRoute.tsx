@@ -12,11 +12,11 @@ export const WEEKDAYS = ['ראשון', 'שני', 'שלישי', 'רביעי', 'ח
 
 export function WorkoutsTabs({ active }: { active: 'mine' | 'exercises' | 'history' }) {
   return (
-    <div className="seg" role="tablist">
-      <Link to="/workouts" className={active === 'mine' ? 'on' : ''}>האימונים שלי</Link>
-      <Link to="/workouts/exercises" className={active === 'exercises' ? 'on' : ''}>תרגילים</Link>
-      <Link to="/workouts/history" className={active === 'history' ? 'on' : ''}>היסטוריה</Link>
-    </div>
+    <nav className="seg" aria-label="חלוקה למסכים">
+      <Link to="/workouts" className={active === 'mine' ? 'on' : ''} aria-current={active === 'mine' ? 'page' : undefined}>האימונים שלי</Link>
+      <Link to="/workouts/exercises" className={active === 'exercises' ? 'on' : ''} aria-current={active === 'exercises' ? 'page' : undefined}>תרגילים</Link>
+      <Link to="/workouts/history" className={active === 'history' ? 'on' : ''} aria-current={active === 'history' ? 'page' : undefined}>היסטוריה</Link>
+    </nav>
   )
 }
 

@@ -21,7 +21,7 @@ export default function ExercisePicker({ title = 'בחירת תרגילים', mu
   return (
     <Sheet title={title} onClose={onClose}>
       <div className="row"><Search size={18} className="muted" aria-hidden /><input className="field" placeholder="חיפוש תרגיל" value={q} onChange={(e) => setQ(e.target.value)} /></div>
-      <div className="chips" role="tablist">
+      <div className="chips">
         <button className={`chip ${muscle === null ? 'on' : ''}`} onClick={() => setMuscle(null)}>הכל</button>
         {MUSCLES.map((m) => <button key={m} className={`chip ${muscle === m ? 'on' : ''}`} onClick={() => setMuscle(m)}>{m}</button>)}
       </div>

@@ -16,11 +16,11 @@ export const MEAL_TYPES: { key: MealType; label: string }[] = [
 
 export function NutritionTabs({ active }: { active: 'day' | 'weight' | 'profile' }) {
   return (
-    <div className="seg" role="tablist">
-      <Link to="/nutrition" className={active === 'day' ? 'on' : ''}>היום</Link>
-      <Link to="/nutrition/weight" className={active === 'weight' ? 'on' : ''}>משקל</Link>
-      <Link to="/nutrition/profile" className={active === 'profile' ? 'on' : ''}>הנתונים שלי</Link>
-    </div>
+    <nav className="seg" aria-label="חלוקה למסכים">
+      <Link to="/nutrition" className={active === 'day' ? 'on' : ''} aria-current={active === 'day' ? 'page' : undefined}>היום</Link>
+      <Link to="/nutrition/weight" className={active === 'weight' ? 'on' : ''} aria-current={active === 'weight' ? 'page' : undefined}>משקל</Link>
+      <Link to="/nutrition/profile" className={active === 'profile' ? 'on' : ''} aria-current={active === 'profile' ? 'page' : undefined}>הנתונים שלי</Link>
+    </nav>
   )
 }
 

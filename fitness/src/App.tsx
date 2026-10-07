@@ -1,19 +1,20 @@
-import { useEffect } from 'react'
+import { Suspense, lazy, useEffect } from 'react'
 import { Navigate, Route, Routes } from 'react-router-dom'
 import AppShell from './components/AppShell'
 import { useSettings } from './lib/hooks'
-import ExercisesRoute from './routes/ExercisesRoute'
-import HistoryRoute from './routes/HistoryRoute'
-import SessionRoute from './routes/SessionRoute'
-import SettingsRoute from './routes/SettingsRoute'
-import NutritionProfileRoute from './routes/NutritionProfileRoute'
-import NutritionRoute from './routes/NutritionRoute'
-import RunPlanRoute from './routes/RunPlanRoute'
-import RunningRoute from './routes/RunningRoute'
-import TodayRoute from './routes/TodayRoute'
-import WeightRoute from './routes/WeightRoute'
-import WorkoutEditRoute from './routes/WorkoutEditRoute'
-import WorkoutsRoute from './routes/WorkoutsRoute'
+
+const ExercisesRoute = lazy(() => import('./routes/ExercisesRoute'))
+const HistoryRoute = lazy(() => import('./routes/HistoryRoute'))
+const SessionRoute = lazy(() => import('./routes/SessionRoute'))
+const SettingsRoute = lazy(() => import('./routes/SettingsRoute'))
+const NutritionProfileRoute = lazy(() => import('./routes/NutritionProfileRoute'))
+const NutritionRoute = lazy(() => import('./routes/NutritionRoute'))
+const RunPlanRoute = lazy(() => import('./routes/RunPlanRoute'))
+const RunningRoute = lazy(() => import('./routes/RunningRoute'))
+const TodayRoute = lazy(() => import('./routes/TodayRoute'))
+const WeightRoute = lazy(() => import('./routes/WeightRoute'))
+const WorkoutEditRoute = lazy(() => import('./routes/WorkoutEditRoute'))
+const WorkoutsRoute = lazy(() => import('./routes/WorkoutsRoute'))
 
 export default function App() {
   const { theme } = useSettings()
@@ -23,6 +24,7 @@ export default function App() {
   }, [theme])
 
   return (
+    <Suspense fallback={<main className="page" aria-busy="true" />}>
     <Routes>
       <Route path="/session/:id" element={<SessionRoute />} />
       <Route element={<AppShell />}>
@@ -40,5 +42,6 @@ export default function App() {
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
+    </Suspense>
   )
 }
