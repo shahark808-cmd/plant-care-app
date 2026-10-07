@@ -3,7 +3,9 @@ import { NavLink } from 'react-router-dom'
 const tabs = [
   { to: '/', label: 'הוספה', icon: '＋' },
   { to: '/expenses', label: 'הוצאות', icon: '☰' },
+  { to: '/income', label: 'הכנסות', icon: '₪' },
   { to: '/budget', label: 'תקציב', icon: '◔' },
+  { to: '/recurring', label: 'קבועות', icon: '↻' },
 ]
 
 export default function BottomNav() {

@@ -1,12 +1,23 @@
+import { useEffect } from 'react'
 import { Navigate, Route, Routes } from 'react-router-dom'
 import BottomNav from './components/BottomNav'
 import Home from './routes/Home'
 import Expenses from './routes/Expenses'
 import Budget from './routes/Budget'
+import Income from './routes/Income'
+import Recurring from './routes/Recurring'
+import { generateRecurring } from './db'
 import { useTheme } from './lib/useTheme'
 
 export default function App() {
   const { theme, setTheme } = useTheme()
+  useEffect(() => {
+    const run = () => void generateRecurring()
+    run()
+    const onVisible = () => document.visibilityState === 'visible' && run()
+    document.addEventListener('visibilitychange', onVisible)
+    return () => document.removeEventListener('visibilitychange', onVisible)
+  }, [])
   const next = theme === 'system' ? 'dark' : theme === 'dark' ? 'light' : 'system'
   const icon = theme === 'dark' ? '🌙' : theme === 'light' ? '☀️' : '🌓'
   return (
@@ -22,6 +33,8 @@ export default function App() {
         <Route path="/" element={<Home />} />
         <Route path="/expenses" element={<Expenses />} />
         <Route path="/budget" element={<Budget />} />
+        <Route path="/income" element={<Income />} />
+        <Route path="/recurring" element={<Recurring />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
       <BottomNav />

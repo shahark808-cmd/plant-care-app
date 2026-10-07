@@ -39,3 +39,10 @@ export function usageColor(pct: number) {
   if (pct >= 70) return 'bg-warn'
   return 'bg-ok'
 }
+
+/** תאריך ביום מסוים בחודש; בחודש קצר מדי - היום האחרון */
+export function dateInMonth(key: string, day: number) {
+  const [y, m] = key.split('-').map(Number)
+  const last = new Date(y, m, 0).getDate()
+  return toDateStr(new Date(y, m - 1, Math.min(day, last)))
+}
