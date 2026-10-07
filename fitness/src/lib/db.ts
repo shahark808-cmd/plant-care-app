@@ -32,6 +32,7 @@ class FitnessDB extends Dexie {
       bodyWeights: 'date',
     })
     this.version(3).stores({ runs: 'id, date, stravaId' })
+    this.version(4).stores({ runs: 'id, date, stravaId, source' })
   }
 }
 

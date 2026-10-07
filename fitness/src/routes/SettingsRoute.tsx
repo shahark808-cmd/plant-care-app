@@ -1,5 +1,6 @@
 import { ChevronRight, Download, Upload } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
+import Connections from '../components/Connections'
 import NumField from '../components/NumField'
 import { DEFAULT_SETTINGS, db } from '../lib/db'
 import { useSettings } from '../lib/hooks'
@@ -75,6 +76,11 @@ export default function SettingsRoute() {
           </label>
         ))}
         <button className="btn btn-ghost" onClick={() => db.settings.put({ ...s, progression: DEFAULT_PROGRESSION })}>החזר לברירות מחדל</button>
+      </section>
+
+      <section className="card stack">
+        <h2>חיבורים</h2>
+        <Connections />
       </section>
 
       <section className="card stack">

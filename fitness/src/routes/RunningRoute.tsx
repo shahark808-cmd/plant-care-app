@@ -1,9 +1,11 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 import { AlertTriangle, FileUp, Plus } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import NumField from '../components/NumField'
 import Sheet from '../components/Sheet'
+import { pullStravaRuns } from '../lib/strava'
+import { supabase } from '../lib/supabase'
 import { db, todayStr, uid } from '../lib/db'
 import { useFinishedSessions, useExercises } from '../lib/hooks'
 import { findDuplicates, formatDuration, formatPace, legsConflicts, mergeRuns, parseDuration, parseGpx, paceSecPerKm, volumeSpike, weeklyKm } from '../lib/running'
@@ -39,6 +41,7 @@ export default function RunningRoute() {
   const [editing, setEditing] = useState<{ run: Run | null; isNew: boolean } | null>(null)
   const [dismissed, setDismissed] = useState<string[]>([])
   const [msg, setMsg] = useState('')
+  useEffect(() => { if (supabase) supabase.auth.getSession().then(({ data }) => data.session && pullStravaRuns().catch(() => {})) }, [])
   const today = todayStr()
   const spike = volumeSpike(runs, today)
   const dups = findDuplicates(runs).filter(([m, o]) => !dismissed.includes(m.id + o.id))

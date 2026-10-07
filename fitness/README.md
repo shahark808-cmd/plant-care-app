@@ -43,3 +43,22 @@ npm run build    # tsc + build + service worker
 - העלייה מעגלת את **הקפיצה** לצעד ולא את המשקל החדש, כדי שמקרה 1 (42 ← 44.5) יתקבל.
 - יעד ירידה במשקל מחושב כתחזוקה פחות 400 (אמצע הטווח 300-500). מקדם פעילות: עד 3 אימונים 1.375, 4-5 אימונים 1.55, 6 ומעלה 1.725.
 - ריצה איכותית מסומנת ידנית ברישום הריצה, והבדיקה מול אימון רגליים משתמשת בסטים של תרגילי רגליים (לפחות 6 סטים נחשבים כבד). גם הסנכרון בין מכשירים (Supabase) ו-Strava/PubMed/Claude API לא נבנו עדיין, והם דורשים פונקציות שרת.
+
+## חיבור Strava (שרת)
+צד השרת רץ ב-Supabase (פרויקט `fitness`): טבלאות `strava_tokens` (טוקנים, RLS בלי policies, גישה רק לפונקציה) ו-`strava_runs` (קריאה למשתמש עצמו בלבד), ופונקציית Edge בשם `strava` (`supabase/functions/strava`) עם המסלולים `auth`, `sync`, `status`, `disconnect` ו-`webhook`.
+
+**הפעלה (חד-פעמית):**
+1. ב-Strava: יוצרים אפליקציית API ב-https://www.strava.com/settings/api עם Authorization Callback Domain של האתר שלך (לבדיקה מקומית `localhost`).
+2. ב-Supabase: Edge Functions → Secrets, מוסיפים `STRAVA_CLIENT_ID`, `STRAVA_CLIENT_SECRET` ו-`STRAVA_VERIFY_TOKEN` (מחרוזת אקראית ארוכה). ה-Secret לא נכנס לקוד, לצ'אט או ל-git.
+3. מגדירים `VITE_STRAVA_CLIENT_ID` בקובץ `.env.local` (ראה `.env.example`) ובהגדרות האתר (Vercel), יחד עם `VITE_SUPABASE_URL` ו-`VITE_SUPABASE_PUBLISHABLE_KEY`.
+4. רושמים webhook פעם אחת מהמחשב שלך (הסוד נשאר אצלך):
+   ```bash
+   curl -X POST https://www.strava.com/api/v3/push_subscriptions \
+     -F client_id=<ID> -F client_secret=<SECRET> \
+     -F callback_url=https://<project-ref>.supabase.co/functions/v1/strava/webhook \
+     -F verify_token=<אותו STRAVA_VERIFY_TOKEN>
+   ```
+   אפשר גם להוסיף את ה-id שחזר כ-`STRAVA_SUBSCRIPTION_ID` כדי להתעלם מאירועים ממנויים אחרים.
+5. באפליקציה: הגדרות ← חיבורים ← התחברות ← חבר את Strava.
+
+**מגבלות ידועות:** לא נבדק מול Strava אמיתית (בסביבת הפיתוח הרשת לדומיין חסומה), ויש לוודא את מגבלות הקצב ואת תנאי השימוש העדכניים של Strava בלוח הבקרה שלהם. אם המשתמש נרשם עם אימייל, ייתכן שנדרש אישור במייל לפי הגדרות ה-Auth בפרויקט.
