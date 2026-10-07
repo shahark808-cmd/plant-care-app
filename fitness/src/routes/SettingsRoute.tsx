@@ -26,7 +26,7 @@ export default function SettingsRoute() {
     db.settings.put({ ...s, progression: { ...s.progression, [key]: pct ? v / 100 : v } })
 
   const exportAll = async () => {
-    const data = { exportedAt: new Date().toISOString(), settings: s, templates: await db.templates.toArray(), sessions: await db.sessions.toArray(), customExercises: await db.customExercises.toArray(), exerciseSettings: await db.exerciseSettings.toArray(), foods: await db.foods.toArray(), meals: await db.meals.toArray(), savedMeals: await db.savedMeals.toArray(), bodyWeights: await db.bodyWeights.toArray() }
+    const data = { exportedAt: new Date().toISOString(), settings: s, templates: await db.templates.toArray(), sessions: await db.sessions.toArray(), customExercises: await db.customExercises.toArray(), exerciseSettings: await db.exerciseSettings.toArray(), foods: await db.foods.toArray(), meals: await db.meals.toArray(), savedMeals: await db.savedMeals.toArray(), bodyWeights: await db.bodyWeights.toArray(), runs: await db.runs.toArray() }
     const a = document.createElement('a')
     a.href = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }))
     a.download = `fitness-backup-${data.exportedAt.slice(0, 10)}.json`
@@ -37,12 +37,12 @@ export default function SettingsRoute() {
       const d = JSON.parse(await file.text())
       if (!d.sessions || !d.templates) throw new Error('bad')
       if (!confirm('הייבוא ידרוס את הנתונים הקיימים. להמשיך?')) return
-      await db.transaction('rw', [db.settings, db.templates, db.sessions, db.customExercises, db.exerciseSettings, db.foods, db.meals, db.savedMeals, db.bodyWeights], async () => {
-        await Promise.all([db.templates.clear(), db.sessions.clear(), db.customExercises.clear(), db.exerciseSettings.clear(), db.foods.clear(), db.meals.clear(), db.savedMeals.clear(), db.bodyWeights.clear()])
+      await db.transaction('rw', [db.settings, db.templates, db.sessions, db.customExercises, db.exerciseSettings, db.foods, db.meals, db.savedMeals, db.bodyWeights, db.runs], async () => {
+        await Promise.all([db.templates.clear(), db.sessions.clear(), db.customExercises.clear(), db.exerciseSettings.clear(), db.foods.clear(), db.meals.clear(), db.savedMeals.clear(), db.bodyWeights.clear(), db.runs.clear()])
         await db.settings.put(d.settings ?? DEFAULT_SETTINGS)
         await db.templates.bulkPut(d.templates); await db.sessions.bulkPut(d.sessions)
         await db.customExercises.bulkPut(d.customExercises ?? []); await db.exerciseSettings.bulkPut(d.exerciseSettings ?? [])
-        await db.foods.bulkPut(d.foods ?? []); await db.meals.bulkPut(d.meals ?? []); await db.savedMeals.bulkPut(d.savedMeals ?? []); await db.bodyWeights.bulkPut(d.bodyWeights ?? [])
+        await db.foods.bulkPut(d.foods ?? []); await db.meals.bulkPut(d.meals ?? []); await db.savedMeals.bulkPut(d.savedMeals ?? []); await db.bodyWeights.bulkPut(d.bodyWeights ?? []); await db.runs.bulkPut(d.runs ?? [])
       })
     } catch { alert('הקובץ לא נראה כמו גיבוי של האפליקציה.') }
   }

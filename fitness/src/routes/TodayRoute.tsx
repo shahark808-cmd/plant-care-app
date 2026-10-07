@@ -5,6 +5,9 @@ import { Link, useNavigate } from 'react-router-dom'
 import { db, todayStr } from '../lib/db'
 import { useExercises, useFinishedSessions, useSettings } from '../lib/hooks'
 import { daysBetween, deloadSignal } from '../lib/progression'
+import { PLAN_WEEKDAYS, RUN_PLAN } from '../data/runPlan'
+import { weeklyKm } from '../lib/running'
+import { planWeekIndex } from './RunPlanRoute'
 import { Progress } from './NutritionRoute'
 import { sumMacros } from '../lib/nutrition'
 import { sessionVolume, startSessionFromTemplate, suggestFor, weeklySetsByMuscle } from '../lib/session'
@@ -26,6 +29,10 @@ export default function TodayRoute() {
   const active = useLiveQuery(() => db.sessions.filter((s) => !s.finishedAt).first(), [])
   const today = todayStr()
   const meals = useLiveQuery(() => db.meals.where('date').equals(todayStr()).toArray(), [], [])
+  const runs = useLiveQuery(() => db.runs.toArray(), [], [])
+  const planIdx = planWeekIndex(settings.runPlanStart, todayStr())
+  const planWeek = planIdx !== null && planIdx < RUN_PLAN.length ? RUN_PLAN[planIdx] : null
+  const runToday = planWeek && (PLAN_WEEKDAYS.easy as readonly number[]).includes(new Date().getDay()) ? planWeek.easy : planWeek && new Date().getDay() === PLAN_WEEKDAYS.long ? `ארוכה: ${planWeek.long}` : null
   const eaten = sumMacros(meals.flatMap((m) => m.items))
   const weekday = new Date().getDay()
 
@@ -82,6 +89,12 @@ export default function TodayRoute() {
         <div className="card empty"><h2>בוא נבנה אימון ראשון</h2><p className="muted">בחר תרגילים מהמאגר וקבע טווח חזרות.</p><Link to="/workouts" className="btn btn-primary">לאימונים</Link></div>
       )}
 
+      {runToday && (
+        <Link to="/running/plan" className="card stack">
+          <div className="label">ריצה מתוכננת להיום</div><h2>{runToday}</h2>
+        </Link>
+      )}
+
       {settings.targets && (
         <Link to="/nutrition" className="card stack">
           <h2>תזונה היום</h2>
@@ -108,6 +121,7 @@ export default function TodayRoute() {
           <div><div className="num">{week.length}</div><div className="label">אימונים</div></div>
           <div><div className="num">{week.reduce((a, s) => a + s.entries.reduce((b, e) => b + e.sets.filter((x) => x.kind !== 'warmup').length, 0), 0)}</div><div className="label">סטים</div></div>
           <div><div className="num">{Math.round(week.reduce((a, s) => a + sessionVolume(s), 0) / 1000 * 10) / 10}</div><div className="label">טון נפח</div></div>
+          <div><div className="num">{weeklyKm(runs, todayStr())}</div><div className="label">ק״מ ריצה</div></div>
         </div>
       </section>
 

@@ -8,7 +8,8 @@ import SessionRoute from './routes/SessionRoute'
 import SettingsRoute from './routes/SettingsRoute'
 import NutritionProfileRoute from './routes/NutritionProfileRoute'
 import NutritionRoute from './routes/NutritionRoute'
-import SoonRoute from './routes/SoonRoute'
+import RunPlanRoute from './routes/RunPlanRoute'
+import RunningRoute from './routes/RunningRoute'
 import TodayRoute from './routes/TodayRoute'
 import WeightRoute from './routes/WeightRoute'
 import WorkoutEditRoute from './routes/WorkoutEditRoute'
@@ -30,7 +31,8 @@ export default function App() {
         <Route path="/workouts/exercises" element={<ExercisesRoute />} />
         <Route path="/workouts/history" element={<HistoryRoute />} />
         <Route path="/workouts/:id" element={<WorkoutEditRoute />} />
-        <Route path="/running" element={<SoonRoute />} />
+        <Route path="/running" element={<RunningRoute />} />
+        <Route path="/running/plan" element={<RunPlanRoute />} />
         <Route path="/nutrition" element={<NutritionRoute />} />
         <Route path="/nutrition/weight" element={<WeightRoute />} />
         <Route path="/nutrition/profile" element={<NutritionProfileRoute />} />

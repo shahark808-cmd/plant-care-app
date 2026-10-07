@@ -1,5 +1,5 @@
 import Dexie, { type Table } from 'dexie'
-import type { AppSettings, BodyWeight, Exercise, Food, MealLog, SavedMeal, ExerciseSettings, WorkoutSession, WorkoutTemplate } from '../types'
+import type { AppSettings, BodyWeight, Exercise, Food, MealLog, Run, SavedMeal, ExerciseSettings, WorkoutSession, WorkoutTemplate } from '../types'
 import { SEED_EXERCISES } from '../data/exercises'
 import { SEED_TEMPLATES } from '../data/templates'
 import { DEFAULT_PROGRESSION } from './progression'
@@ -14,6 +14,7 @@ class FitnessDB extends Dexie {
   meals!: Table<MealLog, string>
   savedMeals!: Table<SavedMeal, string>
   bodyWeights!: Table<BodyWeight, string>
+  runs!: Table<Run, string>
 
   constructor() {
     super('fitness-app')
@@ -30,6 +31,7 @@ class FitnessDB extends Dexie {
       savedMeals: 'id',
       bodyWeights: 'date',
     })
+    this.version(3).stores({ runs: 'id, date, stravaId' })
   }
 }
 

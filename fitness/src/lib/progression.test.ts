@@ -120,3 +120,48 @@ describe('nutrition (spec section 13)', () => {
     expect(calorieAdvice('lose', trend)).toBeNull()
   })
 })
+
+import { findDuplicates, formatPace, legsConflicts, mergeRuns, parseDuration, parseGpx, volumeSpike, weekStart } from './running'
+import type { Run } from '../types'
+
+const run = (o: Partial<Run>): Run => ({ id: Math.random().toString(), date: '2026-10-07', distanceKm: 5, durationSec: 1800, source: 'manual', ...o })
+
+describe('running (spec section 13)', () => {
+  it('week starts Sunday', () => expect(weekStart('2026-10-07')).toBe('2026-10-04'))
+  it('warns when weekly volume goes 20 -> 24 km', () => {
+    const runs = [run({ date: '2026-09-29', distanceKm: 20 }), run({ date: '2026-10-05', distanceKm: 24 })]
+    expect(volumeSpike(runs, '2026-10-07')?.pct).toBe(20)
+  })
+  it('no warning for a 10% rise or less', () => {
+    expect(volumeSpike([run({ date: '2026-09-29', distanceKm: 20 }), run({ date: '2026-10-05', distanceKm: 22 })], '2026-10-07')).toBeNull()
+  })
+  it('hard run 12h before heavy legs is flagged, 30h is not', () => {
+    const legs = Date.parse('2026-10-08T18:00:00')
+    expect(legsConflicts(Date.parse('2026-10-08T06:00:00'), [legs])).toHaveLength(1)
+    expect(legsConflicts(Date.parse('2026-10-07T12:00:00'), [legs])).toHaveLength(0)
+  })
+  it('detects manual/synced duplicates and keeps manual fields', () => {
+    const m = run({ distanceKm: 5, durationSec: 1800, note: 'נעים' })
+    const s = run({ source: 'strava', distanceKm: 5.1, durationSec: 1830, avgHr: 150, stravaId: 9 })
+    expect(findDuplicates([m, s])).toHaveLength(1)
+    expect(findDuplicates([m, run({ source: 'strava', distanceKm: 8 })])).toHaveLength(0)
+    expect(mergeRuns(m, s)).toMatchObject({ source: 'manual', note: 'נעים', avgHr: 150, stravaId: 9 })
+  })
+  it('formats pace and parses durations', () => {
+    expect(formatPace(330)).toBe('5:30')
+    expect(parseDuration('32:10')).toBe(1930)
+    expect(parseDuration('45')).toBe(2700)
+    expect(parseDuration('abc')).toBe(0)
+  })
+  it('parses a GPX track', () => {
+    const gpx = `<gpx><trk><trkseg>
+      <trkpt lat="32.0000" lon="34.8000"><time>2026-10-07T05:00:00Z</time><extensions><gpxtpx:hr>140</gpxtpx:hr></extensions></trkpt>
+      <trkpt lat="32.0090" lon="34.8000"><time>2026-10-07T05:05:00Z</time><extensions><gpxtpx:hr>160</gpxtpx:hr></extensions></trkpt>
+    </trkseg></trk></gpx>`
+    const g = parseGpx(gpx)!
+    expect(g.distanceKm).toBeCloseTo(1, 1)
+    expect(g.durationSec).toBe(300)
+    expect(g.avgHr).toBe(150)
+    expect(g.maxHr).toBe(160)
+  })
+})

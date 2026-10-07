@@ -104,6 +104,8 @@ export interface AppSettings {
   /** YYYY-MM-DD of the last accepted light week. */
   lastDeload?: string
   profile?: Profile
+  /** Start date (YYYY-MM-DD) of week 1 of the 10 km plan. */
+  runPlanStart?: string
   targets?: Targets
   deloadSnoozeUntil?: string
 }
@@ -153,3 +155,20 @@ export interface MealItem extends Macros {
 export interface MealLog { id: string; date: string; type: MealType; items: MealItem[] }
 export interface SavedMeal { id: string; name: string; items: Omit<MealItem, 'id'>[] }
 export interface BodyWeight { date: string; kg: number }
+
+// ---- Running (stage 3) ----
+export type RunFeel = 'easy' | 'ok' | 'hard' | 'pain'
+export interface Run {
+  id: string
+  date: string // YYYY-MM-DD (local)
+  distanceKm: number
+  durationSec: number
+  avgHr?: number
+  maxHr?: number
+  source: 'manual' | 'strava' | 'file'
+  stravaId?: number
+  note?: string
+  feel?: RunFeel
+  /** Hard / quality effort (intervals, tempo). Easy runs are the default. */
+  quality?: boolean
+}
