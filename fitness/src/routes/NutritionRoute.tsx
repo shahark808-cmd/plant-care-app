@@ -2,6 +2,8 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { ChevronLeft, ChevronRight, Plus, Trash2, BookmarkPlus } from 'lucide-react'
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
+import InsightCard from '../components/InsightCard'
+import { useInsights } from '../lib/useInsights'
 import AddFoodSheet from '../components/AddFoodSheet'
 import { db, todayStr, uid } from '../lib/db'
 import { useSettings } from '../lib/hooks'
@@ -39,6 +41,7 @@ export default function NutritionRoute() {
   const [date, setDate] = useState(todayStr())
   const [adding, setAdding] = useState<MealType | null>(null)
   const { targets } = useSettings()
+  const insight = useInsights('nutrition')[0]
   const meals = useLiveQuery(() => db.meals.where('date').equals(date).toArray(), [date], [] as MealLog[])
   const total = sumMacros(meals.flatMap((m) => m.items))
   const left = targets ? targets.calories - total.kcal : null
@@ -72,6 +75,8 @@ export default function NutritionRoute() {
         <Progress label="שומן" value={total.fat} target={targets?.fat} unit="ג׳" />
         {!targets && <p className="notice">כדי לראות יעדים, <Link to="/nutrition/profile" style={{ textDecoration: 'underline' }}>מלא את הנתונים שלך</Link>.</p>}
       </section>
+
+      {insight && date === todayStr() && <InsightCard insight={insight} />}
 
       {MEAL_TYPES.map(({ key, label }) => {
         const mine = meals.filter((m) => m.type === key)

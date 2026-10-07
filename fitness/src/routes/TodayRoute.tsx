@@ -10,7 +10,11 @@ import { weeklyKm } from '../lib/running'
 import { planWeekIndex } from './RunPlanRoute'
 import { Progress } from './NutritionRoute'
 import { sumMacros } from '../lib/nutrition'
-import { sessionVolume, startSessionFromTemplate, suggestFor, weeklySetsByMuscle } from '../lib/session'
+import InsightCard from '../components/InsightCard'
+import { weeklyStreak } from '../lib/insights'
+import { useInsights } from '../lib/useInsights'
+import { addDays, weekStart } from '../lib/running'
+import { lightWeekActive, sessionVolume, startSessionFromTemplate, stalledExerciseIds, weeklySetsByMuscle } from '../lib/session'
 import type { WorkoutTemplate } from '../types'
 import { WEEKDAYS } from './WorkoutsRoute'
 
@@ -45,22 +49,37 @@ export default function TodayRoute() {
   }, [templates, finished])
   const tpl = planned ?? fallback
 
-  const weekStart = todayStr(new Date(Date.now() - 6 * 86_400_000))
-  const week = finished.filter((s) => s.date >= weekStart)
-  const sets = weeklySetsByMuscle(finished, byId, weekStart)
+  const last7 = todayStr(new Date(Date.now() - 6 * 86_400_000))
+  const week = finished.filter((s) => s.date >= last7)
+  const sets = weeklySetsByMuscle(finished, byId, last7)
 
   const deload = useMemo(() => {
     const since = settings.lastDeload ?? finished[finished.length - 1]?.date
     if (!since || (settings.deloadSnoozeUntil && settings.deloadSnoozeUntil > today)) return null
-    const recent = finished.filter((s) => daysBetween(s.date, today) <= 21)
-    const ids = [...new Set(recent.flatMap((s) => s.entries.map((e) => e.exerciseId)))]
-    const stalled = ids.filter((id) => {
-      const ex = byId.get(id)
-      return ex && suggestFor(ex, { lo: 8, hi: 12, step: ex.defaultStepKg }, finished, settings).kind === 'stall'
-    }).length
+    const stalled = stalledExerciseIds(finished, byId, settings, today).length
     const veryHard = finished.filter((s) => daysBetween(s.date, today) <= 14).flatMap((s) => s.entries).filter((e) => e.effort === 'very_hard').length
     return deloadSignal(Math.floor(daysBetween(since, today) / 7), stalled, veryHard)
   }, [finished, settings, byId, today])
+
+  const insights = useInsights()
+  const goal = settings.weeklyGoal ?? 3
+  const weekCounts = useMemo(() => {
+    const count = (ws: string) => finished.filter((s) => s.date >= ws && s.date <= addDays(ws, 6)).length + runs.filter((r) => r.date >= ws && r.date <= addDays(ws, 6)).length
+    const thisWeek = weekStart(today)
+    const first = finished[finished.length - 1]?.date ?? runs.map((r) => r.date).sort()[0]
+    if (!first) return { done: [] as number[], cur: 0 }
+    const done: number[] = []
+    for (let ws = weekStart(first); ws < thisWeek; ws = addDays(ws, 7)) done.push(count(ws))
+    return { done, cur: count(thisWeek) }
+  }, [finished, runs, today])
+  const streak = weeklyStreak(weekCounts.done, weekCounts.cur, goal)
+  const proteinWeek = useLiveQuery(async () => {
+    const ms = (await db.meals.where('date').aboveOrEqual(last7).toArray())
+    const days = new Map<string, number>()
+    ms.forEach((m) => days.set(m.date, (days.get(m.date) ?? 0) + m.items.reduce((a, i) => a + i.protein, 0)))
+    return days.size ? Math.round([...days.values()].reduce((a, b) => a + b, 0) / days.size) : null
+  }, [last7], null)
+  const light = lightWeekActive(settings, today)
 
   const start = async (t: WorkoutTemplate) => nav(`/session/${await startSessionFromTemplate(t, byId, settings)}`)
 
@@ -100,11 +119,11 @@ export default function TodayRoute() {
           <h2>תזונה היום</h2>
           <Progress label="קלוריות" value={eaten.kcal} target={settings.targets.calories} unit="קל׳" />
           <Progress label="חלבון" value={eaten.protein} target={settings.targets.protein} unit="ג׳" />
-          {meals.length === 0 && new Date().getHours() >= 19 && <p className="muted small">עוד לא נרשם אוכל היום. אפשר להוסיף ארוחה במהירות.</p>}
+          {!settings.remindersOff && meals.length === 0 && new Date().getHours() >= 19 && <p className="muted small">עוד לא נרשם אוכל היום. אפשר להוסיף ארוחה במהירות.</p>}
         </Link>
       )}
 
-      {deload?.suggest && (
+      {!settings.remindersOff && deload?.suggest && (
         <div className="card stack">
           <h2>שבוע קל?</h2>
           <p className="muted">{deload.reason}. שבוע עם פחות נפח ופחות עומס עוזר להתאושש.</p>
@@ -115,6 +134,9 @@ export default function TodayRoute() {
         </div>
       )}
 
+      {light && <p className="notice">השבוע קל: ההצעות באימונים מופחתות בעומס ובסט אחד. לא צריך להוכיח כלום, ההתאוששות היא חלק מהתהליך.</p>}
+      {insights[0] && <InsightCard insight={insights[0]} />}
+
       <section className="card stack">
         <h2>7 הימים האחרונים</h2>
         <div className="row" style={{ justifyContent: 'space-between' }}>
@@ -123,6 +145,8 @@ export default function TodayRoute() {
           <div><div className="num">{Math.round(week.reduce((a, s) => a + sessionVolume(s), 0) / 1000 * 10) / 10}</div><div className="label">טון נפח</div></div>
           <div><div className="num">{weeklyKm(runs, todayStr())}</div><div className="label">ק״מ ריצה</div></div>
         </div>
+        {proteinWeek !== null && <p className="label">ממוצע חלבון בימים שנרשמו: {proteinWeek} ג׳{settings.targets ? ` (יעד ${settings.targets.protein})` : ''}</p>}
+        {streak >= 2 && <p className="label">{streak} שבועות ברצף שמגיעים ליעד של {goal} פעילויות בשבוע. שבוע אחד חלש לא שובר את הרצף.</p>}
       </section>
 
       {finished.length > 0 && (

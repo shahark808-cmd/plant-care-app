@@ -1,6 +1,8 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 import { ChevronLeft, Copy, Plus } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
+import InsightCard from '../components/InsightCard'
+import { useInsights } from '../lib/useInsights'
 import { db, uid } from '../lib/db'
 import { useExercises, useSettings } from '../lib/hooks'
 import { startEmptySession, startSessionFromTemplate } from '../lib/session'
@@ -23,6 +25,7 @@ export default function WorkoutsRoute() {
   const nav = useNavigate()
   const { byId } = useExercises()
   const settings = useSettings()
+  const insight = useInsights('training')[0]
 
   const create = async () => {
     const t: WorkoutTemplate = { id: uid(), name: 'אימון חדש', items: [], createdAt: Date.now() }
@@ -39,6 +42,7 @@ export default function WorkoutsRoute() {
     <main className="page">
       <h1>אימונים</h1>
       <WorkoutsTabs active="mine" />
+      {insight && <InsightCard insight={insight} />}
       {templates.length === 0 ? (
         <div className="empty"><h2>עוד אין אימונים</h2><p className="muted">בנה אימון ראשון מתוך מאגר התרגילים.</p></div>
       ) : (

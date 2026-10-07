@@ -15,6 +15,7 @@ class FitnessDB extends Dexie {
   savedMeals!: Table<SavedMeal, string>
   bodyWeights!: Table<BodyWeight, string>
   runs!: Table<Run, string>
+  hiddenInsights!: Table<{ id: string }, string>
 
   constructor() {
     super('fitness-app')
@@ -33,6 +34,7 @@ class FitnessDB extends Dexie {
     })
     this.version(3).stores({ runs: 'id, date, stravaId' })
     this.version(4).stores({ runs: 'id, date, stravaId, source' })
+    this.version(5).stores({ hiddenInsights: 'id' })
   }
 }
 

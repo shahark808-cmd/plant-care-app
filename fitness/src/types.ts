@@ -106,6 +106,10 @@ export interface AppSettings {
   profile?: Profile
   /** Start date (YYYY-MM-DD) of week 1 of the 10 km plan. */
   runPlanStart?: string
+  /** Workouts + runs per week that count as a good week (flexible weekly streak). */
+  weeklyGoal?: number
+  /** Gentle in-app reminders on the home screen (no push notifications). */
+  remindersOff?: boolean
   targets?: Targets
   deloadSnoozeUntil?: string
 }

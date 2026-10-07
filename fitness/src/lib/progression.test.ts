@@ -165,3 +165,42 @@ describe('running (spec section 13)', () => {
     expect(g.maxHr).toBe(160)
   })
 })
+
+import { detectTriggers, weeklyStreak } from './insights'
+import { INSIGHTS } from '../data/insights'
+
+describe('insights & streak', () => {
+  const base = { today: '2026-10-07', runs: [], proteinDays: [], stalledExercises: 0, deloadSuggested: false, easyRatings: 0, runLegsConflict: false }
+  it('triggers on three low-protein days only when each is under 80% of target', () => {
+    const low = [{ date: 'a', protein: 90 }, { date: 'b', protein: 100 }, { date: 'c', protein: 80 }]
+    expect(detectTriggers({ ...base, proteinTarget: 135, proteinDays: low })).toContain('protein-intake')
+    expect(detectTriggers({ ...base, proteinTarget: 135, proteinDays: [{ date: 'a', protein: 130 }, ...low.slice(1)] })).not.toContain('protein-intake')
+    expect(detectTriggers({ ...base, proteinTarget: 135, proteinDays: low.slice(0, 2) })).toHaveLength(0)
+  })
+  it('flags stalls and repeated easy ratings', () => {
+    expect(detectTriggers({ ...base, stalledExercises: 1 })).toEqual(['deload-consensus'])
+    expect(detectTriggers({ ...base, easyRatings: 3 })).toEqual(['proximity-failure'])
+  })
+  it('every insight has a source and a limitation', () => {
+    for (const i of INSIGHTS) { expect(i.source.pmid).toMatch(/^\d+$/); expect(i.limitation.length).toBeGreaterThan(10) }
+  })
+  it('streak forgives one missed week but not two', () => {
+    expect(weeklyStreak([3, 3, 1, 3, 3], 0, 3)).toBe(4)
+    expect(weeklyStreak([3, 1, 1, 3], 3, 3)).toBe(2)
+    expect(weeklyStreak([], 3, 3)).toBe(1)
+  })
+})
+
+import { lightWeekActive } from './session'
+import { DEFAULT_SETTINGS } from './db'
+
+describe('light week', () => {
+  const s = (lastDeload?: string) => ({ ...DEFAULT_SETTINGS, lastDeload })
+  it('starts the day after acceptance and lasts 7 days', () => {
+    expect(lightWeekActive(s('2026-10-06'), '2026-10-06')).toBe(false)
+    expect(lightWeekActive(s('2026-10-06'), '2026-10-07')).toBe(true)
+    expect(lightWeekActive(s('2026-10-06'), '2026-10-13')).toBe(true)
+    expect(lightWeekActive(s('2026-10-06'), '2026-10-14')).toBe(false)
+    expect(lightWeekActive(s(undefined), '2026-10-07')).toBe(false)
+  })
+})

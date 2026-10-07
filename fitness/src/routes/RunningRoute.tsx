@@ -2,6 +2,8 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { AlertTriangle, FileUp, Plus } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import InsightCard from '../components/InsightCard'
+import { useInsights } from '../lib/useInsights'
 import NumField from '../components/NumField'
 import Sheet from '../components/Sheet'
 import { pullStravaRuns } from '../lib/strava'
@@ -43,6 +45,7 @@ export default function RunningRoute() {
   const [msg, setMsg] = useState('')
   useEffect(() => { if (supabase) supabase.auth.getSession().then(({ data }) => data.session && pullStravaRuns().catch(() => {})) }, [])
   const today = todayStr()
+  const insight = useInsights('run')[0]
   const spike = volumeSpike(runs, today)
   const dups = findDuplicates(runs).filter(([m, o]) => !dismissed.includes(m.id + o.id))
   const wk = weeklyKm(runs, today)
@@ -69,6 +72,8 @@ export default function RunningRoute() {
           <p className="grow">הנפח השבועי עלה ב-{spike.pct}% ({spike.prevKm} ← {spike.curKm} ק״מ). עלייה של יותר מכ-10% בשבוע מעלה סיכון לעומס יתר, כדאי לשמור על ריצות קלות.</p>
         </div>
       )}
+
+      {insight && <InsightCard insight={insight} />}
 
       {dups.map(([m, o]) => (
         <div key={m.id + o.id} className="card stack">
