@@ -5,6 +5,8 @@ import { Link, useNavigate } from 'react-router-dom'
 import { db, todayStr } from '../lib/db'
 import { useExercises, useFinishedSessions, useSettings } from '../lib/hooks'
 import { daysBetween, deloadSignal } from '../lib/progression'
+import { Progress } from './NutritionRoute'
+import { sumMacros } from '../lib/nutrition'
 import { sessionVolume, startSessionFromTemplate, suggestFor, weeklySetsByMuscle } from '../lib/session'
 import type { WorkoutTemplate } from '../types'
 import { WEEKDAYS } from './WorkoutsRoute'
@@ -23,6 +25,8 @@ export default function TodayRoute() {
   const templates = useLiveQuery(() => db.templates.toArray(), [], [] as WorkoutTemplate[])
   const active = useLiveQuery(() => db.sessions.filter((s) => !s.finishedAt).first(), [])
   const today = todayStr()
+  const meals = useLiveQuery(() => db.meals.where('date').equals(todayStr()).toArray(), [], [])
+  const eaten = sumMacros(meals.flatMap((m) => m.items))
   const weekday = new Date().getDay()
 
   const planned = templates.find((t) => t.weekday === weekday) ?? null
@@ -76,6 +80,15 @@ export default function TodayRoute() {
         </div>
       ) : (
         <div className="card empty"><h2>בוא נבנה אימון ראשון</h2><p className="muted">בחר תרגילים מהמאגר וקבע טווח חזרות.</p><Link to="/workouts" className="btn btn-primary">לאימונים</Link></div>
+      )}
+
+      {settings.targets && (
+        <Link to="/nutrition" className="card stack">
+          <h2>תזונה היום</h2>
+          <Progress label="קלוריות" value={eaten.kcal} target={settings.targets.calories} unit="קל׳" />
+          <Progress label="חלבון" value={eaten.protein} target={settings.targets.protein} unit="ג׳" />
+          {meals.length === 0 && new Date().getHours() >= 19 && <p className="muted small">עוד לא נרשם אוכל היום. אפשר להוסיף ארוחה במהירות.</p>}
+        </Link>
       )}
 
       {deload?.suggest && (

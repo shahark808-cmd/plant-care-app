@@ -103,5 +103,53 @@ export interface AppSettings {
   warmupPcts: number[]
   /** YYYY-MM-DD of the last accepted light week. */
   lastDeload?: string
+  profile?: Profile
+  targets?: Targets
   deloadSnoozeUntil?: string
 }
+
+// ---- Nutrition (stage 2) ----
+export type Sex = 'male' | 'female'
+export type Goal = 'gain' | 'maintain' | 'lose'
+export type MealType = 'breakfast' | 'lunch' | 'dinner' | 'snack'
+
+export interface Profile {
+  weightKg: number
+  heightCm: number
+  age: number
+  sex: Sex
+  workoutsPerWeek: number
+  goal: Goal
+}
+
+export interface Targets {
+  calories: number
+  protein: number
+  carbs: number
+  fat: number
+  source: 'calculated' | 'manual'
+  updatedAt: string
+}
+
+export interface Macros { kcal: number; protein: number; carbs: number; fat: number }
+
+export interface Food {
+  id: string
+  name: string
+  per100: Macros
+  units?: { name: string; grams: number }[]
+  source: 'user' | 'off' | 'seed'
+  barcode?: string
+}
+
+export interface MealItem extends Macros {
+  id: string
+  foodId?: string
+  name: string
+  amount: string // human readable, e.g. "150 ג׳" or "2 יחידות"
+  estimated?: boolean
+}
+
+export interface MealLog { id: string; date: string; type: MealType; items: MealItem[] }
+export interface SavedMeal { id: string; name: string; items: Omit<MealItem, 'id'>[] }
+export interface BodyWeight { date: string; kg: number }

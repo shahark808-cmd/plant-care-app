@@ -94,3 +94,29 @@ describe('helpers', () => {
     expect(deloadSignal(2, 0, 0).suggest).toBe(false)
   })
 })
+
+import { calcTargets, calorieAdvice, ema, macrosForGrams } from './nutrition'
+
+describe('nutrition (spec section 13)', () => {
+  const p = { weightKg: 75, heightCm: 175, age: 25, sex: 'male' as const, workoutsPerWeek: 4, goal: 'gain' as const }
+  it('targets for 75kg male, 4 workouts, gain', () => {
+    const t = calcTargets(p, '2026-10-07')
+    expect(t.calories).toBe(2922)
+    expect(t.protein).toBe(135)
+    expect(t.fat).toBe(67.5)
+    expect(t.carbs).toBeCloseTo(443.6, 0)
+  })
+  it('lose goal subtracts calories, female uses -161', () => {
+    expect(calcTargets({ ...p, sex: 'female', goal: 'lose' }, 'x').calories).toBe(Math.round((10 * 75 + 6.25 * 175 - 125 - 161) * 1.55 - 400))
+  })
+  it('macros scale by grams', () => {
+    expect(macrosForGrams({ id: 'a', name: 'x', source: 'user', per100: { kcal: 165, protein: 31, carbs: 0, fat: 3.6 } }, 200)).toEqual({ kcal: 330, protein: 62, carbs: 0, fat: 7.2 })
+  })
+  it('ema smooths', () => expect(ema([80, 82], 0.5)).toEqual([80, 81]))
+  it('suggests calories when gaining and flat for 3 weeks', () => {
+    const trend = [{ date: '2026-09-10', kg: 75 }, { date: '2026-09-30', kg: 75.05 }]
+    expect(calorieAdvice('gain', trend)?.kcalDelta).toBe(150)
+    expect(calorieAdvice('gain', [{ date: '2026-09-10', kg: 75 }, { date: '2026-09-30', kg: 76 }])).toBeNull()
+    expect(calorieAdvice('lose', trend)).toBeNull()
+  })
+})

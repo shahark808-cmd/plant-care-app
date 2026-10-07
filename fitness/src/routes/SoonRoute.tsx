@@ -1,13 +1,12 @@
-import { Footprints, Salad } from 'lucide-react'
+import { Footprints } from 'lucide-react'
 
-export default function SoonRoute({ kind }: { kind: 'running' | 'nutrition' }) {
-  const Icon = kind === 'running' ? Footprints : Salad
+export default function SoonRoute() {
   return (
     <main className="page">
       <div className="empty">
-        <Icon size={40} strokeWidth={1.4} aria-hidden />
-        <h1>{kind === 'running' ? 'ריצה' : 'תזונה'}</h1>
-        <p className="muted">{kind === 'running' ? 'יומן הריצות ותוכנית ה-10 ק״מ יגיעו בשלב הבא.' : 'מעקב קלוריות וחלבון יגיע בשלב הבא.'}</p>
+        <Footprints size={40} strokeWidth={1.4} aria-hidden />
+        <h1>ריצה</h1>
+        <p className="muted">יומן הריצות ותוכנית ה-10 ק״מ יגיעו בשלב הבא.</p>
       </div>
     </main>
   )
