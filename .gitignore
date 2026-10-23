@@ -26,3 +26,8 @@ public/icons/*.png
 *.njsproj
 *.sln
 *.sw?
+.next
+.env*.local
+next-env.d.ts
+*.tsbuildinfo
+.pgdata

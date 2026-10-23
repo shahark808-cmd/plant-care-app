@@ -1,130 +1,63 @@
-// Generates the PWA icon PNGs (no external deps, no network) using a tiny
-// hand-rolled PNG encoder. Icon: forest-green full-bleed background (safe
-// for maskable icons) + white rounded frame + a taegeuk (yin-yang) swirl in
-// the Korean flag's red/blue, echoing the in-app Welcome screen badge.
-import { deflateSync } from 'node:zlib'
-import { writeFileSync, mkdirSync } from 'node:fs'
-import { fileURLToPath } from 'node:url'
-import { dirname, join } from 'node:path'
+// מחולל אייקוני PWA (PNG) בלי תלויות: רקע טורקיז וטבעת התקדמות לבנה.
+import { deflateSync } from "node:zlib";
+import { mkdirSync, writeFileSync } from "node:fs";
 
-const __dirname = dirname(fileURLToPath(import.meta.url))
-const outDir = join(__dirname, '..', 'public', 'icons')
-mkdirSync(outDir, { recursive: true })
+const crcTable = Array.from({ length: 256 }, (_, n) => {
+  let c = n;
+  for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
+  return c >>> 0;
+});
+const crc32 = (buf) => {
+  let c = 0xffffffff;
+  for (const b of buf) c = crcTable[(c ^ b) & 0xff] ^ (c >>> 8);
+  return (c ^ 0xffffffff) >>> 0;
+};
+const chunk = (type, data) => {
+  const len = Buffer.alloc(4);
+  len.writeUInt32BE(data.length);
+  const body = Buffer.concat([Buffer.from(type), data]);
+  const crc = Buffer.alloc(4);
+  crc.writeUInt32BE(crc32(body));
+  return Buffer.concat([len, body, crc]);
+};
 
-const GREEN = [15, 107, 92]
-const WHITE = [255, 255, 255]
-const RED = [198, 12, 48]
-const BLUE = [0, 52, 120]
-
-function roundedRectContains(x, y, cx, cy, halfW, halfH, radius) {
-  const qx = Math.max(Math.abs(x - cx) - (halfW - radius), 0)
-  const qy = Math.max(Math.abs(y - cy) - (halfH - radius), 0)
-  return Math.sqrt(qx * qx + qy * qy) <= radius
-}
-
-function taegeukColor(x, y, cx, cy, radius) {
-  const dx = x - cx
-  const dy = y - cy
-  const theta = (-45 * Math.PI) / 180
-  const rx = dx * Math.cos(theta) - dy * Math.sin(theta)
-  const ry = dx * Math.sin(theta) + dy * Math.cos(theta)
-  const d = Math.sqrt(rx * rx + ry * ry)
-  if (d > radius) return null
-  const half = radius / 2
-  const dTop = Math.hypot(rx, ry + half)
-  const dBottom = Math.hypot(rx, ry - half)
-  if (rx >= 0) return dTop <= half ? RED : BLUE
-  return dBottom <= half ? BLUE : RED
-}
-
-function renderIcon(size, { maskable = false } = {}) {
-  const buf = Buffer.alloc(size * size * 4)
-  const frameScale = maskable ? 0.58 : 0.74
-  const circleScale = maskable ? 0.34 : 0.42
-  const cx = size / 2
-  const cy = size / 2
-  const frameHalf = (size * frameScale) / 2
-  const frameRadius = frameHalf * 0.4
-  const circleR = (size * circleScale) / 2
-
+function png(size, { maskable }) {
+  const bg = [15, 118, 110];
+  const raw = Buffer.alloc((size * 3 + 1) * size);
+  const c = size / 2;
+  const scale = maskable ? 0.62 : 1; // maskable: תוכן בתוך האזור הבטוח
+  const rOuter = size * 0.32 * scale;
+  const rInner = size * 0.2 * scale;
+  const dot = size * 0.07 * scale;
   for (let y = 0; y < size; y++) {
+    raw[y * (size * 3 + 1)] = 0;
     for (let x = 0; x < size; x++) {
-      let color = GREEN
-      if (roundedRectContains(x, y, cx, cy, frameHalf, frameHalf, frameRadius)) {
-        color = WHITE
-        const tg = taegeukColor(x, y, cx, cy, circleR)
-        if (tg) color = tg
-      }
-      const i = (y * size + x) * 4
-      buf[i] = color[0]
-      buf[i + 1] = color[1]
-      buf[i + 2] = color[2]
-      buf[i + 3] = 255
+      const d = Math.hypot(x + 0.5 - c, y + 0.5 - c);
+      const angle = Math.atan2(y + 0.5 - c, x + 0.5 - c);
+      const inRing = d <= rOuter && d >= rInner;
+      const inDot = d <= dot;
+      // קצה ירוק-בהיר לחלק מהטבעת, כמו התקדמות
+      const accent = inRing && angle > -Math.PI / 2 && angle < Math.PI / 6;
+      const px = inDot || (inRing && !accent) ? [255, 255, 255] : accent ? [167, 243, 208] : bg;
+      const o = y * (size * 3 + 1) + 1 + x * 3;
+      raw[o] = px[0]; raw[o + 1] = px[1]; raw[o + 2] = px[2];
     }
   }
-  return buf
-}
-
-// --- minimal PNG encoder ---
-const CRC_TABLE = (() => {
-  const table = new Uint32Array(256)
-  for (let n = 0; n < 256; n++) {
-    let c = n
-    for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1
-    table[n] = c >>> 0
-  }
-  return table
-})()
-
-function crc32(buf) {
-  let c = 0xffffffff
-  for (let i = 0; i < buf.length; i++) c = CRC_TABLE[(c ^ buf[i]) & 0xff] ^ (c >>> 8)
-  return (c ^ 0xffffffff) >>> 0
-}
-
-function chunk(type, data) {
-  const typeBuf = Buffer.from(type, 'ascii')
-  const len = Buffer.alloc(4)
-  len.writeUInt32BE(data.length, 0)
-  const crc = Buffer.alloc(4)
-  crc.writeUInt32BE(crc32(Buffer.concat([typeBuf, data])), 0)
-  return Buffer.concat([len, typeBuf, data, crc])
-}
-
-function encodePNG(rgbaBuf, size) {
-  const signature = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10])
-  const ihdrData = Buffer.alloc(13)
-  ihdrData.writeUInt32BE(size, 0)
-  ihdrData.writeUInt32BE(size, 4)
-  ihdrData[8] = 8 // bit depth
-  ihdrData[9] = 6 // color type RGBA
-  ihdrData[10] = 0
-  ihdrData[11] = 0
-  ihdrData[12] = 0
-
-  const raw = Buffer.alloc((size * 4 + 1) * size)
-  for (let y = 0; y < size; y++) {
-    const rowStart = y * (size * 4 + 1)
-    raw[rowStart] = 0 // filter: none
-    rgbaBuf.copy(raw, rowStart + 1, y * size * 4, (y + 1) * size * 4)
-  }
-  const idatData = deflateSync(raw)
-
+  const ihdr = Buffer.alloc(13);
+  ihdr.writeUInt32BE(size, 0);
+  ihdr.writeUInt32BE(size, 4);
+  ihdr[8] = 8; ihdr[9] = 2;
   return Buffer.concat([
-    signature,
-    chunk('IHDR', ihdrData),
-    chunk('IDAT', idatData),
-    chunk('IEND', Buffer.alloc(0)),
-  ])
+    Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]),
+    chunk("IHDR", ihdr),
+    chunk("IDAT", deflateSync(raw)),
+    chunk("IEND", Buffer.alloc(0)),
+  ]);
 }
 
-function writeIcon(size, filename, opts) {
-  const png = encodePNG(renderIcon(size, opts), size)
-  writeFileSync(join(outDir, filename), png)
-  console.log(`wrote ${filename} (${size}x${size})`)
-}
-
-writeIcon(192, 'icon-192.png')
-writeIcon(512, 'icon-512.png')
-writeIcon(512, 'icon-maskable-512.png', { maskable: true })
-writeIcon(180, 'apple-touch-icon.png')
+mkdirSync("public/icons", { recursive: true });
+writeFileSync("public/icons/icon-192.png", png(192, { maskable: false }));
+writeFileSync("public/icons/icon-512.png", png(512, { maskable: false }));
+writeFileSync("public/icons/icon-maskable-512.png", png(512, { maskable: true }));
+writeFileSync("public/icons/apple-touch-icon.png", png(180, { maskable: false }));
+console.log("icons generated");

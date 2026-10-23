@@ -1,38 +1,44 @@
-# העוזר האישי של שחר — Korea Trip PWA
+# התקציב שלנו
 
-עוזר טיול לקוריאה: תוכנית יומית, מדריך רבעים בסיאול, המלצות מקומות, ניווט (Naver/Kakao) ותרגום עברית-קוריאנית. ראו `CLAUDE.md` לפרטי הארכיטקטורה והמוסכמות.
+אפליקציית תקציב זוגית בעברית (RTL), PWA, Next.js (App Router) + Supabase. כל תנועה פרטית כברירת מחדל; רק תנועה שסומנה "משותף" נראית לבן/בת הזוג. הפרטיות נאכפת ברמת מסד הנתונים (Row Level Security).
 
----
+> סטטוס: **שלב 1 (ליבה אישית)**. תקציב חכם, אזור משותף מלא, תובנות וייבוא קבצים יתווספו בשלבים הבאים.
 
-# React + TypeScript + Vite
+## הרצה מקומית
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
-
-Currently, two official plugins are available:
-
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
-
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the Oxlint configuration
-
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
-
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+```bash
+npm install
+cp .env.example .env.local   # ממלאים URL ומפתח ציבורי (anon/publishable) של Supabase
+npm run dev
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+בלי `.env.local` האפליקציה מציגה מסך הנחיות במקום לקרוס.
+
+## הגדרת Supabase (תוכנית Free)
+
+1. פותחים פרויקט ב-[supabase.com](https://supabase.com).
+2. מריצים את קבצי `supabase/migrations/*.sql` לפי סדר השמות (ב-SQL Editor, או `supabase db push` עם ה-CLI).
+3. ב-Authentication → URL Configuration מוסיפים את כתובת האתר (`http://localhost:3000` ודומיין הפריסה) ל-Redirect URLs.
+4. כניסה מהמסך המותקן: ב-Authentication → Email Templates (Magic Link) מוסיפים לגוף המייל גם את `{{ .Token }}`, כך אפשר להקליד את הקוד באפליקציה במקום ללחוץ על הקישור.
+5. אופציונלי: `supabase/seed.sql` מוסיף נתוני דמה אחרי שנרשמתם ויצרתם משק בית.
+
+## בדיקות
+
+```bash
+npm run test:unit   # חישובי כסף (אגורות) וחודש פיננסי
+npm run test:rls    # מרים Postgres זמני, מריץ את המיגרציות ומוכיח שמשתמש ב' לא קורא נתון פרטי של א'
+npm run lint && npm run typecheck && npm run build
+```
+
+בדיקות ה-RLS רצות מול Postgres רגיל עם shim קטן שמדמה את `auth.uid()` ואת התפקידים של Supabase (`tests/rls/shim.sql`). אפשר גם להצביע על מסד אחר עם `TEST_DATABASE_URL`.
+
+## פריסה ל-Vercel
+
+מייבאים את הריפו, מגדירים `NEXT_PUBLIC_SUPABASE_URL` ו-`NEXT_PUBLIC_SUPABASE_ANON_KEY`, ופורסים. אין מפתחות סודיים בצד הלקוח.
+
+## עקרונות
+
+- סכומים: אגורות כמספרים שלמים בלבד (`src/lib/money.ts`).
+- חודש פיננסי: ברירת מחדל מה-10 עד ה-9 (`src/lib/period.ts`), ניתן לשינוי בהגדרות; משפיע רק על חישובים.
+- RLS על כל טבלה; אין views או RPC שמסכמים שורות פרטיות של אחרים.
+- אין שמירת פרטי בנק/אשראי, אין חיבור לארנק, SMS או התראות.

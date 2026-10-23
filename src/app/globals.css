@@ -1,0 +1,92 @@
+@import "tailwindcss";
+
+:root {
+  --bg: #f4f7f7;
+  --surface: #ffffff;
+  --surface-2: #eaf1f1;
+  --text: #0f1f1f;
+  --muted: #566767;
+  --primary: #0f766e;
+  --primary-fg: #ffffff;
+  --income: #15803d;
+  --warn: #c2410c;
+  --danger: #b91c1c;
+  --border: #dbe5e5;
+  --shadow: 0 1px 2px rgb(15 31 31 / 0.06), 0 4px 16px rgb(15 31 31 / 0.06);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0c1515;
+    --surface: #131f1f;
+    --surface-2: #1b2b2b;
+    --text: #e8f2f2;
+    --muted: #9db3b3;
+    --primary: #2dd4bf;
+    --primary-fg: #04201d;
+    --income: #4ade80;
+    --warn: #fb923c;
+    --danger: #f87171;
+    --border: #243636;
+    --shadow: 0 1px 2px rgb(0 0 0 / 0.4), 0 4px 16px rgb(0 0 0 / 0.3);
+  }
+}
+
+@theme inline {
+  --font-sans: var(--font-heebo), system-ui, sans-serif;
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-text: var(--text);
+  --color-muted: var(--muted);
+  --color-primary: var(--primary);
+  --color-primary-fg: var(--primary-fg);
+  --color-income: var(--income);
+  --color-warn: var(--warn);
+  --color-danger: var(--danger);
+  --color-border: var(--border);
+  --shadow-card: var(--shadow);
+}
+
+html {
+  background: var(--bg);
+  color: var(--text);
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  font-family: var(--font-sans);
+  min-height: 100dvh;
+}
+
+.num {
+  font-variant-numeric: tabular-nums;
+}
+
+button, a, input, select {
+  min-height: 44px;
+}
+
+:focus-visible {
+  outline: 3px solid var(--primary);
+  outline-offset: 2px;
+}
+
+@keyframes pop {
+  0% { transform: scale(0.6); opacity: 0; }
+  60% { transform: scale(1.1); opacity: 1; }
+  100% { transform: scale(1); }
+}
+.pop { animation: pop 0.35s ease-out; }
+
+@keyframes shimmer {
+  0% { opacity: 0.5; }
+  50% { opacity: 1; }
+  100% { opacity: 0.5; }
+}
+.skeleton { background: var(--surface-2); border-radius: 12px; animation: shimmer 1.4s infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  .pop, .skeleton { animation: none; }
+  * { transition: none !important; }
+}
