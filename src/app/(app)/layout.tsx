@@ -14,7 +14,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const { data: member } = await supabase.from("household_members").select("household_id").maybeSingle();
+  const { data: member } = await supabase.from("household_members").select("household_id").eq("user_id", user.id).maybeSingle();
   if (!member) redirect("/onboarding");
 
   const [household, categories, profiles, accounts] = await Promise.all([

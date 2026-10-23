@@ -1,5 +1,6 @@
 "use client";
 
+import { Money } from "@/components/Money";
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
@@ -182,7 +183,7 @@ export default function AddPage() {
               <span className="text-sm text-muted">מספר תשלומים</span>
               <Input type="number" inputMode="numeric" min={1} max={36} value={installments} onChange={(e) => setInstallments(e.target.value)} />
               {Number(installments) > 1 && agorot ? (
-                <span className="num block text-sm text-muted">{Math.trunc(Number(installments))} תשלומים של כ-{formatAgorot(Math.floor(agorot / Math.trunc(Number(installments))))}, אחד בכל חודש</span>
+                <span className="num block text-sm text-muted">{Math.trunc(Number(installments))} תשלומים של כ-<Money agorot={Math.floor(agorot / Math.trunc(Number(installments)))} />, אחד בכל חודש</span>
               ) : null}
             </label>
           )}

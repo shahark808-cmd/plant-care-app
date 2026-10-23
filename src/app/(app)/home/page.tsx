@@ -1,5 +1,6 @@
 "use client";
 
+import { Money } from "@/components/Money";
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useQueryClient } from "@tanstack/react-query";
@@ -146,7 +147,7 @@ export default function HomePage() {
 
       {scope === "personal" && reminders.map(({ r, days }) => (
         <Card key={r.id} className="p-4 text-sm" role="status">
-          🔔 {r.note || "מנוי"} מתחדש {days === 0 ? "היום" : days === 1 ? "מחר" : `בעוד ${days} ימים`} ({formatAgorot(r.amount)})
+          🔔 {r.note || "מנוי"} מתחדש {days === 0 ? "היום" : days === 1 ? "מחר" : `בעוד ${days} ימים`} (<Money agorot={r.amount} />)
         </Card>
       ))}
 
@@ -182,7 +183,7 @@ export default function HomePage() {
                   <div className="flex items-center gap-2 text-sm">
                     <CategoryIcon name={c.icon} size={16} style={{ color: c.color }} />
                     <span className="flex-1">{c.name}</span>
-                    <span className="num text-muted" dir="ltr">{formatAgorot(spent)} / {formatAgorot(amount)}</span>
+                    <span className="text-muted"><Money agorot={spent} /> / <Money agorot={amount} /></span>
                   </div>
                   <div className="h-1.5 overflow-hidden rounded-full bg-surface-2" role="progressbar" aria-valuenow={Math.round(ratio * 100)} aria-valuemin={0} aria-valuemax={100} aria-label={`ניצול ${c.name}`}>
                     <div className="h-full rounded-full transition-all" style={{ width: `${Math.min(100, ratio * 100)}%`, background: ratio > 1 ? "var(--danger)" : ratio >= 0.8 ? "var(--warn)" : "var(--primary)" }} />

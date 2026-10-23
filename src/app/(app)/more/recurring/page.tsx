@@ -1,5 +1,6 @@
 "use client";
 
+import { Money } from "@/components/Money";
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Lock, Repeat, Trash2, Users } from "lucide-react";
@@ -80,7 +81,7 @@ export default function RecurringPage() {
                 {r.visibility === "shared" ? <Users size={16} aria-label="משותף" /> : <Lock size={16} aria-label="פרטי" />}
                 <div className="min-w-0 flex-1">
                   <p className="truncate font-medium">{r.note || cat?.name || "הוצאה קבועה"}{r.is_subscription ? " · מנוי" : ""}</p>
-                  <p className="num text-sm text-muted">ב-{r.day_of_month} לחודש · {r.type === "income" ? "+" : ""}{formatAgorot(r.amount)}</p>
+                  <p className="num text-sm text-muted">ב-{r.day_of_month} לחודש · {r.type === "income" ? "+" : ""}<Money agorot={r.amount} /></p>
                 </div>
                 <Button variant="secondary" onClick={() => toggle(r.id, r.active)} className="px-3 text-sm">{r.active ? "השהיה" : "הפעלה"}</Button>
                 <Button variant="ghost" aria-label="מחיקה" onClick={() => remove(r.id)} className="text-danger"><Trash2 size={18} aria-hidden /></Button>

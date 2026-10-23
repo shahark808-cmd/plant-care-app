@@ -1,5 +1,6 @@
 "use client";
 
+import { Money } from "@/components/Money";
 import { useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useAppData } from "@/components/AppProviders";
@@ -54,7 +55,7 @@ export default function TransactionsPage() {
             {shortFmt.format(new Date(`${period.start}T00:00:00`))} – {shortFmt.format(new Date(`${period.end}T00:00:00`))}
           </div>
           <div className="num text-sm text-muted">
-            הכנסות {formatAgorot(totals.income)} · הוצאות {formatAgorot(totals.expense)}
+            הכנסות <Money agorot={totals.income} /> · הוצאות <Money agorot={totals.expense} />
           </div>
         </div>
         <button type="button" aria-label="תקופה הבאה" onClick={() => setPeriod(shiftPeriod(period.start, 1, startDay))} className="size-11 rounded-full bg-surface-2">

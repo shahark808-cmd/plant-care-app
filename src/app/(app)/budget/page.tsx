@@ -1,5 +1,6 @@
 "use client";
 
+import { Money } from "@/components/Money";
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
@@ -86,7 +87,7 @@ export default function BudgetPage() {
         <h2 className="font-semibold">תבנית 50/30/20</h2>
         <p className="text-sm text-muted">
           50% לצרכים, 30% לרצונות ו-20% לחיסכון, לפי המשכורת בתקופה
-          {income > 0 ? ` (${formatAgorot(income)})` : ""}. אפשר לשנות כל סכום אחר כך.
+          {income > 0 ? <> (<Money agorot={income} />)</> : null}. אפשר לשנות כל סכום אחר כך.
         </p>
         <Button onClick={apply503020} variant={confirm ? "primary" : "secondary"} className="h-12 w-full">
           {confirm ? "בטוחים? זה יחליף את התקציב של התקופה" : "החלת התבנית"}
@@ -130,7 +131,7 @@ export default function BudgetPage() {
                       <div className="h-full rounded-full transition-all" style={{ width: `${Math.min(100, ratio * 100)}%`, background: barColor(ratio) }} />
                     </div>
                     <p className="num text-sm text-muted">
-                      {amount >= spent ? `נשאר ${formatAgorot(amount - spent)}` : `חרגתם ב-${formatAgorot(spent - amount)}. זה קורה, נאזן בהמשך`}
+                      {amount >= spent ? <>נשאר <Money agorot={amount - spent} /></> : <>חרגתם ב-<Money agorot={spent - amount} />. זה קורה, נאזן בהמשך</>}
                     </p>
                   </>
                 )}
