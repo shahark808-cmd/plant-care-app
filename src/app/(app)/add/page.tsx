@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
 import { Check, ChevronDown, Lock, Users } from "lucide-react";
 import { useAppData } from "@/components/AppProviders";
+import { installmentPlan, nextChargeDate } from "@/lib/budget";
 import { CategoryIcon } from "@/components/CategoryIcon";
 import { NumPad } from "@/components/NumPad";
 import { Button, Input } from "@/components/ui/ui";
@@ -18,7 +19,7 @@ import type { TxType, Visibility } from "@/lib/types";
 const LAST_CAT_KEY = "lastCategory";
 
 export default function AddPage() {
-  const { household, categories, userId } = useAppData();
+  const { household, categories, userId, accounts } = useAppData();
   const router = useRouter();
   const queryClient = useQueryClient();
 
@@ -28,6 +29,8 @@ export default function AddPage() {
   const [visibility, setVisibility] = useState<Visibility>("private");
   const [date, setDate] = useState(() => toIsoDate(new Date()));
   const [note, setNote] = useState("");
+  const [accountId, setAccountId] = useState<string | null>(null);
+  const [installments, setInstallments] = useState("1");
   const [more, setMore] = useState(false);
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(false);
@@ -44,17 +47,31 @@ export default function AddPage() {
     if (!agorot || agorot <= 0) return setError("הקלידו סכום");
     setBusy(true);
     setError(null);
-    const { error } = await getSupabaseBrowser().from("transactions").insert({
+    const account = accounts.find((a) => a.id === accountId);
+    const card = account?.kind === "credit_card" ? (account.charge_day ?? 2) : null;
+    const count = type === "expense" ? Math.min(36, Math.max(1, Math.trunc(Number(installments) || 1))) : 1;
+    const base = {
       household_id: household.id,
       owner_id: userId,
       paid_by: userId,
-      amount: agorot,
       type,
       category_id: categoryId,
-      date,
+      account_id: accountId,
       visibility,
       note: note.trim() || null,
-    });
+    };
+    const rows =
+      count > 1
+        ? installmentPlan(agorot, count, date, card).map((p) => ({
+            ...base,
+            amount: p.amount,
+            date: p.date,
+            charge_date: p.chargeDate,
+            installment_index: p.index,
+            installments_total: count,
+          }))
+        : [{ ...base, amount: agorot, date, charge_date: card === null ? null : nextChargeDate(date, card) }];
+    const { error } = await getSupabaseBrowser().from("transactions").insert(rows);
     setBusy(false);
     if (error) return setError("השמירה לא הצליחה. נסו שוב.");
     if (categoryId) rememberCategory(categoryId);
@@ -141,6 +158,34 @@ export default function AddPage() {
             <span className="text-sm text-muted">תאריך</span>
             <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
           </label>
+          {accounts.length > 0 && (
+            <div className="space-y-1">
+              <span className="text-sm text-muted">אמצעי תשלום</span>
+              <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="אמצעי תשלום">
+                {[{ id: null as string | null, name: "ללא" }, ...accounts].map((a) => (
+                  <button
+                    key={a.id ?? "none"}
+                    type="button"
+                    role="radio"
+                    aria-checked={accountId === a.id}
+                    onClick={() => setAccountId(a.id)}
+                    className={cn("rounded-full border px-4 text-sm", accountId === a.id ? "border-transparent bg-primary text-primary-fg" : "border-border bg-surface")}
+                  >
+                    {a.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+          {type === "expense" && (
+            <label className="space-y-1">
+              <span className="text-sm text-muted">מספר תשלומים</span>
+              <Input type="number" inputMode="numeric" min={1} max={36} value={installments} onChange={(e) => setInstallments(e.target.value)} />
+              {Number(installments) > 1 && agorot ? (
+                <span className="num block text-sm text-muted">{Math.trunc(Number(installments))} תשלומים של כ-{formatAgorot(Math.floor(agorot / Math.trunc(Number(installments))))}, אחד בכל חודש</span>
+              ) : null}
+            </label>
+          )}
           <label className="space-y-1">
             <span className="text-sm text-muted">הערה</span>
             <Input value={note} onChange={(e) => setNote(e.target.value)} maxLength={140} />

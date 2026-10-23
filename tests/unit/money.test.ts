@@ -35,3 +35,11 @@ describe("splitAgorot", () => {
     expect(c + d).toBe(999);
   });
 });
+
+import { agorotToInput } from "@/lib/money";
+
+describe("agorotToInput", () => {
+  it("round-trips with parseToAgorot", () => {
+    for (const a of [0, 7, 50, 1200, 1250, 1999, 123456]) expect(parseToAgorot(agorotToInput(a))).toBe(a);
+  });
+});

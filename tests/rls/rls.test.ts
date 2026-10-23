@@ -191,3 +191,63 @@ describeDb("RLS: other tables and RPCs", () => {
     expect((await asUser(C, (c) => c.query("select * from public.settlements"))).rowCount).toBe(0);
   });
 });
+
+describeDb("Stage 2: recurring rules, buckets, budgets", () => {
+  it("new households get categories with 50/30/20 buckets including savings", async () => {
+    const r = await admin.query("select distinct bucket from public.categories where household_id = $1 and bucket is not null order by bucket", [household]);
+    expect(r.rows.map((x) => x.bucket)).toEqual(["needs", "savings", "wants"]);
+  });
+
+  it("materialize_recurring creates due transactions once, under the owner's RLS", async () => {
+    const [cat] = (await admin.query("select id from public.categories where household_id = $1 and kind = 'expense' limit 1", [household])).rows;
+    await asUserCommit(A, (c) =>
+      c.query(
+        `insert into public.recurring_rules (household_id, visibility, category_id, amount, type, day_of_month, note, is_subscription)
+         values ($1, 'private', $2, 4500, 'expense', 1, 'rent-test', true)`,
+        [household, cat.id],
+      ),
+    );
+    // כלל שנוצר "אתמול" כדי שהיום הראשון של החודש יחשב כבר שהגיע
+    await admin.query("update public.recurring_rules set created_at = now() - interval '70 days' where note = 'rent-test'");
+    const first = await asUserCommit(A, (c) => c.query("select public.materialize_recurring(current_date) as n"));
+    expect(first.rows[0].n).toBeGreaterThanOrEqual(2);
+    const again = await asUserCommit(A, (c) => c.query("select public.materialize_recurring(current_date) as n"));
+    expect(again.rows[0].n).toBe(0);
+    const rows = await admin.query("select source, owner_id, visibility from public.transactions where note = 'rent-test'");
+    expect(rows.rowCount).toBeGreaterThanOrEqual(2);
+    expect(rows.rows.every((r) => r.source === "recurring" && r.owner_id === A && r.visibility === "private")).toBe(true);
+  });
+
+  it("partner cannot see private recurring-generated rows or rules", async () => {
+    const tx = await asUser(B, (c) => c.query("select * from public.transactions where note = 'rent-test'"));
+    expect(tx.rowCount).toBe(0);
+    const rules = await asUser(B, (c) => c.query("select * from public.recurring_rules"));
+    expect(rules.rowCount).toBe(0);
+  });
+
+  it("materialize_recurring only touches the caller's own rules", async () => {
+    const before = (await admin.query("select count(*)::int as n from public.transactions where source = 'recurring'")).rows[0].n;
+    await asUserCommit(B, (c) => c.query("select public.materialize_recurring(current_date)"));
+    const after = (await admin.query("select count(*)::int as n from public.transactions where source = 'recurring'")).rows[0].n;
+    expect(after).toBe(before);
+  });
+
+  it("anon cannot call materialize_recurring", async () => {
+    await admin.query("begin");
+    try {
+      await admin.query("set local role anon");
+      await expect(admin.query("select public.materialize_recurring(current_date)")).rejects.toThrow();
+    } finally {
+      await admin.query("rollback");
+    }
+  });
+
+  it("budgets: one row per owner/category/period/visibility, private to the owner", async () => {
+    const [cat] = (await admin.query("select id from public.categories where household_id = $1 and kind = 'expense' limit 1", [household])).rows;
+    await asUserCommit(A, (c) => c.query("insert into public.budgets (household_id, category_id, period_start, amount) values ($1, $2, '2026-03-10', 100000)", [household, cat.id]));
+    await expect(
+      asUserCommit(A, (c) => c.query("insert into public.budgets (household_id, category_id, period_start, amount) values ($1, $2, '2026-03-10', 5)", [household, cat.id])),
+    ).rejects.toThrow();
+    expect((await asUser(B, (c) => c.query("select * from public.budgets"))).rowCount).toBe(0);
+  });
+});

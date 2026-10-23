@@ -4,8 +4,10 @@ import { useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useAppData } from "@/components/AppProviders";
 import { ScopeToggle } from "@/components/ScopeToggle";
+import { ViewModeToggle, useViewMode } from "@/components/ViewModeToggle";
 import { TxRow } from "@/components/TxRow";
 import { EmptyState, Skeleton } from "@/components/ui/ui";
+import { effectiveDate } from "@/lib/budget";
 import { formatAgorot } from "@/lib/money";
 import { periodFor, toIsoDate } from "@/lib/period";
 import { filterByScope, summarize, useTransactions, type Scope } from "@/lib/useTransactions";
@@ -24,19 +26,24 @@ export default function TransactionsPage() {
   const startDay = household.period_start_day;
   const [period, setPeriod] = useState(() => periodFor(toIsoDate(new Date()), startDay));
   const [scope, setScope] = useState<Scope>("personal");
-  const { data, isLoading, isError } = useTransactions(period);
+  const [mode, setMode] = useViewMode();
+  const { data, isLoading, isError } = useTransactions(period, mode);
 
   const txs = useMemo(() => filterByScope(data ?? [], scope, userId), [data, scope, userId]);
   const totals = summarize(txs);
   const groups = useMemo(() => {
     const map = new Map<string, typeof txs>();
-    for (const t of txs) map.set(t.date, [...(map.get(t.date) ?? []), t]);
-    return [...map.entries()];
-  }, [txs]);
+    for (const t of txs) {
+      const key = effectiveDate(t, mode);
+      map.set(key, [...(map.get(key) ?? []), t]);
+    }
+    return [...map.entries()].sort((a, b) => b[0].localeCompare(a[0]));
+  }, [txs, mode]);
 
   return (
     <div className="space-y-4">
       <ScopeToggle value={scope} onChange={setScope} />
+      <ViewModeToggle value={mode} onChange={setMode} />
 
       <div className="flex items-center justify-between">
         <button type="button" aria-label="תקופה קודמת" onClick={() => setPeriod(shiftPeriod(period.start, -1, startDay))} className="size-11 rounded-full bg-surface-2">
@@ -66,7 +73,7 @@ export default function TransactionsPage() {
       )}
       {groups.map(([date, rows]) => (
         <section key={date} className="space-y-2">
-          <h2 className="text-sm font-medium text-muted">{dateFmt.format(new Date(`${date}T00:00:00`))}</h2>
+          <h2 className="text-sm font-medium text-muted">{mode === "charge" ? "יורד ב-" : ""}{dateFmt.format(new Date(`${date}T00:00:00`))}</h2>
           <ul className="space-y-2">
             {rows.map((t) => (
               <TxRow key={t.id} tx={t} />

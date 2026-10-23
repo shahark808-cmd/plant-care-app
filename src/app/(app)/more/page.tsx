@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Copy, LogOut, Plus } from "lucide-react";
+import { ChevronLeft, Copy, CreditCard, LogOut, PiggyBank, Plus, Repeat } from "lucide-react";
 import { useAppData } from "@/components/AppProviders";
 import { Button, Card, Input } from "@/components/ui/ui";
 import { cn } from "@/lib/cn";
@@ -126,6 +127,20 @@ export default function MorePage() {
   return (
     <div className="space-y-4">
       <h1 className="text-2xl font-bold">עוד</h1>
+
+      <Card className="divide-y divide-border p-2">
+        {[
+          { href: "/budget", label: "תקציב לקטגוריות", Icon: PiggyBank },
+          { href: "/more/recurring", label: "הוצאות קבועות ומנויים", Icon: Repeat },
+          { href: "/more/accounts", label: "כרטיסים ואמצעי תשלום", Icon: CreditCard },
+        ].map(({ href, label, Icon }) => (
+          <Link key={href} href={href} className="flex items-center gap-3 px-3 py-2">
+            <Icon aria-hidden className="text-primary" />
+            <span className="flex-1">{label}</span>
+            <ChevronLeft aria-hidden className="text-muted" size={18} />
+          </Link>
+        ))}
+      </Card>
 
       <Section title="פרופיל">
         <Input value={displayName} onChange={(e) => setDisplayName(e.target.value)} aria-label="השם שלי" placeholder="השם שלי" />

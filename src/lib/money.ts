@@ -35,3 +35,10 @@ export function splitAgorot(total: number, ratioPercent: number): [number, numbe
   const first = Math.round((total * ratioPercent) / 100);
   return [first, total - first];
 }
+
+/** אגורות -> מחרוזת לשדה קלט ("12.5" ל-1250, "12" ל-1200). */
+export function agorotToInput(agorot: number): string {
+  const whole = Math.trunc(agorot / 100);
+  const frac = agorot % 100;
+  return frac === 0 ? String(whole) : `${whole}.${String(frac).padStart(2, "0").replace(/0$/, "")}`;
+}
