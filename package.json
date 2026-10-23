@@ -3,7 +3,9 @@
   "private": true,
   "version": "0.1.0",
   "scripts": {
+    "predev": "node scripts/generate-icons.mjs",
     "dev": "next dev",
+    "prebuild": "node scripts/generate-icons.mjs",
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
